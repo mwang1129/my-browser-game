@@ -43,7 +43,7 @@ const environments=[
 ];
 tracks.forEach((t,i)=>{t.theme=environments[i%environments.length];t.variant=Math.floor(i/environments.length);t.palette=t.theme.sky.map(c=>{if(!t.variant)return c;let n=parseInt(c.slice(1),16),rgb=[n>>16,(n>>8)&255,n&255],target=t.variant===1?[245,197,151]:[153,155,190],amount=t.variant===1?.18:.26;return '#'+rgb.map((v,i)=>Math.round(v*(1-amount)+target[i]*amount).toString(16).padStart(2,'0')).join('')});t.accent=t.theme.accent});
 let obstacles=[],hitCooldown=0,impact=0;
-function buildObstacles(){obstacles=[];let count=3+Math.floor(selected/5);for(let i=0;i<count;i++){let index=Math.floor(32+i*(N-64)/count),p=road[index],side=(i+selected)%2?1:-1,offset=side*track.width*.56;obstacles.push({index,x:p.x+p.nx*offset,z:p.z+p.nz*offset,y:p.y,radius:1.1+selected*.008,angle:p.angle})}hitCooldown=0;impact=0}
+function buildObstacles(){obstacles=[];let count=3+Math.floor(selected/5);for(let i=0;i<count;i++){let index=Math.floor(32+i*(N-64)/count);while(ramps.some(r=>index>=r.start-4&&index<r.landing+5))index++;let p=road[index],side=(i+selected)%2?1:-1,offset=side*track.width*.56;obstacles.push({index,x:p.x+p.nx*offset,z:p.z+p.nz*offset,y:p.y,radius:1.1+selected*.008,angle:p.angle})}hitCooldown=0;impact=0}
 let selected=0,track=tracks[0],state='intro',keys={},car={},cam={},elapsed=0,count=0,last=0,nearest=0,travel=0,previous=0,best=0,muted=true,audio,osc,gain;
 function bestKey(){return 'apex-kart-v7-'+selected+'-best'}
 // Difficulty rises continuously across all 51 courses. Narrower roads,
@@ -74,7 +74,7 @@ function center(t,id=selected){let def=layouts[id%17],variant=Math.floor(id/17),
  let rotation=variant*.7+(id%17)*.11,c=Math.cos(rotation),sn=Math.sin(rotation),sx=(80+variant*8)*(id%3===0?1.50:1.32),sz=(78+variant*13)*(id%3===0?1.45:1.30); x*=sx;z*=sz;
  return{x:x*c-z*sn,z:x*sn+z*c,y:12+tracks[id].elevation*(Math.sin(2*t+id*.37)+.3*Math.sin(4*t-id*.37))}}
 let pickups=[],coins=0,nitro=0,driftCharge=0,boostTime=0,boostTotal=0,trickTotal=0,driftSide=0,wasDrift=false,itemHeld=false,spaceHeld=false;
-function resetRace(){coins=0;nitro=0;driftCharge=0;boostTime=0;boostTotal=0;trickTotal=0;driftSide=0;wasDrift=false;itemHeld=false;spaceHeld=false;pickups=[];for(let i=20;i<N-15;i+=13){let p=road[i],offset=Math.sin(i*1.7)*track.width*.40;pickups.push({x:p.x+p.nx*offset,z:p.z+p.nz*offset,y:p.y+1.5,index:i,taken:false})}}
+function resetRace(){coins=0;nitro=0;driftCharge=0;boostTime=0;boostTotal=0;trickTotal=0;driftSide=0;wasDrift=false;itemHeld=false;spaceHeld=false;pickups=[];for(let i=20;i<N-15;i+=13){if(gapAt(i))continue;let p=road[i],offset=Math.sin(i*1.7)*track.width*.40;pickups.push({x:p.x+p.nx*offset,z:p.z+p.nz*offset,y:p.y+1.5,index:i,taken:false})}}
 function releaseDrift(){let tier=driftCharge>=2.2?3:driftCharge>=1.25?2:driftCharge>=.6?1:0;if(tier){boostTime=Math.max(boostTime,[0,.7,1.15,1.8][tier]);boostTotal++;announce(['','MINI TURBO','SUPER TURBO','ULTRA TURBO'][tier])}driftCharge=0;driftSide=0}
 function useNitro(){if(state==='racing'&&nitro>0){nitro--;boostTime=Math.max(boostTime,1.4);announce('NITRO!')}}
 $('useboost').onclick=useNitro;
@@ -112,21 +112,24 @@ for(const coin of pickups)if(!coin.taken&&Math.hypot(car.x-coin.x,car.z-coin.z)<
 
 
 }
-function drawKart(c,color){box(c.x,c.y+.1,c.z,3,.65,4.4,c.angle,color);box(c.x,c.y+.75,c.z,1.5,1.05,1.8,c.angle,'#263b42');box(c.x,c.y+1.65,c.z,1.15,.75,1.15,c.angle,color);for(const side of [-1,1])for(const end of [-1,1]){let x=side*1.65,z=end*1.4;box(c.x+x*Math.cos(c.angle)+z*Math.sin(c.angle),c.y,c.z-x*Math.sin(c.angle)+z*Math.cos(c.angle),.8,1,1.1,c.angle,'#223435')}}
+function drawWings(c,color){const point=(x,y,z)=>({x:c.x+x*Math.cos(c.angle)+z*Math.sin(c.angle),y:c.y+y,z:c.z-x*Math.sin(c.angle)+z*Math.cos(c.angle)});for(const side of [-1,1]){poly([point(side*.6,3.9,1.4),point(side*9,3.3,-1.7),point(side*7,3.2,-4.2),point(side*.6,3.7,-1.7)],color);poly([point(side*.6,3.92,1.4),point(side*9,3.32,-1.7),point(side*8.6,3.34,-2.1),point(side*.6,3.94,.9)],'#f3ffe0');poly([point(side*.6,3.72,-1.1),point(side*7,3.22,-3.7),point(side*7,3.24,-4.2),point(side*.6,3.74,-1.7)],'#263b42');box(c.x+side*Math.cos(c.angle),c.y+1.3,c.z-side*Math.sin(c.angle),.14,2.5,.14,c.angle,'#edf8d9')}}
+function drawKart(c,color){if(c.airborne)drawWings(c,color);box(c.x,c.y+.1,c.z,3,.65,4.4,c.angle,color);box(c.x,c.y+.75,c.z,1.5,1.05,1.8,c.angle,'#263b42');box(c.x,c.y+1.65,c.z,1.15,.75,1.15,c.angle,color);for(const side of [-1,1])for(const end of [-1,1]){let x=side*1.65,z=end*1.4;box(c.x+x*Math.cos(c.angle)+z*Math.sin(c.angle),c.y,c.z-x*Math.sin(c.angle)+z*Math.cos(c.angle),.8,1,1.1,c.angle,'#223435')}}
 let shortcuts=[],ramps=[],boosts=[],runAir=0,runHits=0,toastTime=0;
 function announce(text){$('message').textContent=text;toastTime=1.1}
-function buildFeatures(){ramps=[];boosts=[];for(const start of [90,240]){let end=start+5;for(let i=start;i<=end;i++)road[i].y+=(i-start)/5*3.2;ramps.push({start,end,height:3.2})}boosts=[45,185,305].map(index=>({index}));}
+function gapAt(progress){return ramps.find(r=>progress>=r.end&&progress<r.landing)}
+function buildFeatures(){ramps=[];boosts=[];const spacing=track.length/N;for(const target of [90,240]){let start=target,bestScore=Infinity;const span=Math.ceil(120/spacing);for(let candidate=target-30;candidate<=target+30;candidate++){const heading=road[candidate].angle;let turn=0;for(let j=1;j<=span;j++)turn=Math.max(turn,Math.abs(Math.atan2(Math.sin(road[candidate+j].angle-heading),Math.cos(road[candidate+j].angle-heading))));const score=turn+Math.abs(candidate-target)*.002;if(score<bestScore){bestScore=score;start=candidate}}const rise=Math.max(2,Math.ceil(24/spacing)),end=start+rise,landing=end+Math.ceil(95/spacing),height=13;for(let i=start;i<=end;i++)road[i].y+=(i-start)/rise*height;ramps.push({start,end,landing,height,gapLength:(landing-end)*spacing})}boosts=[45,185,305].map(index=>({index}));}
 
-function buildShortcuts(){shortcuts=[];let bestRatio=1.08,choice=null;for(let start=30;start<260;start+=10)for(let span of [35,50,65]){let end=start+span,a=road[start],b=road[end],len=0;for(let i=start;i<end;i++)len+=Math.hypot(road[i+1].x-road[i].x,road[i+1].z-road[i].z);let direct=Math.hypot(b.x-a.x,b.z-a.z),ratio=len/direct;if(direct>45&&ratio>bestRatio&&ratio<3){bestRatio=ratio;choice={start,end,a,b}}}if(!choice)return;let {start,end,a,b}=choice,dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz),points=[];for(let i=0;i<=64;i++){let f=i/64;points.push({x:a.x+dx*f,z:a.z+dz*f,y:a.y+(b.y-a.y)*f+.12,nx:dz/l,nz:-dx/l,progress:start+(end-start)*f,angle:Math.atan2(dx,dz)})}shortcuts.push({start,end,points,width:Math.max(6,track.width*.55)})}
+function buildShortcuts(){shortcuts=[];let bestRatio=1.08,choice=null;for(let start=30;start<260;start+=10)for(let span of [35,50,65]){let end=start+span;if(ramps.some(r=>(start>=r.start-2&&start<=r.landing+2)||(end>=r.start-2&&end<=r.landing+2)))continue;let a=road[start],b=road[end],len=0;for(let i=start;i<end;i++)len+=Math.hypot(road[i+1].x-road[i].x,road[i+1].z-road[i].z);let direct=Math.hypot(b.x-a.x,b.z-a.z),ratio=len/direct;if(direct>45&&ratio>bestRatio&&ratio<3){bestRatio=ratio;choice={start,end,a,b}}}if(!choice)return;let {start,end,a,b}=choice,dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz),points=[];for(let i=0;i<=64;i++){let f=i/64;points.push({x:a.x+dx*f,z:a.z+dz*f,y:a.y+(b.y-a.y)*f+.12,nx:dz/l,nz:-dx/l,progress:start+(end-start)*f,angle:Math.atan2(dx,dz)})}shortcuts.push({start,end,points,width:Math.max(6,track.width*.55)})}
 function sampleRoad(id){let raw=[],length=0;for(let i=0;i<=1440;i++){let p=center(i/1440*Math.PI*2,id);if(i)length+=Math.hypot(p.x-raw[i-1].x,p.z-raw[i-1].z);raw.push({...p,s:length})}let j=1;const points=[];for(let i=0;i<N;i++){let s=i/N*length;while(raw[j].s<s)j++;let a=raw[j-1],b=raw[j],f=(s-a.s)/(b.s-a.s);points.push({x:a.x+(b.x-a.x)*f,z:a.z+(b.z-a.z)*f,y:a.y+(b.y-a.y)*f})}points.forEach((p,i)=>{let a=points[(i+N-1)%N],b=points[(i+1)%N],dx=b.x-a.x,dz=b.z-a.z,l=Math.hypot(dx,dz);p.nx=dz/l;p.nz=-dx/l;p.angle=Math.atan2(dx,dz)});tracks[id].length=length;return points}
 
 // Use line-segment projections so containment is smooth between road samples.
 let lanes=[],fences=[];
 function closestOnSegment(x,z,a,b){let dx=b.x-a.x,dz=b.z-a.z,l=dx*dx+dz*dz,t=Math.max(0,Math.min(1,((x-a.x)*dx+(z-a.z)*dz)/l));return{x:a.x+dx*t,z:a.z+dz*t,y:a.y+(b.y-a.y)*t,t,distance:Math.hypot(x-a.x-dx*t,z-a.z-dz*t),angle:Math.atan2(dx,dz)}}
 function laneDistance(x,z,lane){let best=null,bestSquared=Infinity;for(let i=0;i<lane.points.length-(lane.closed?0:1);i++){let a=lane.points[i],b=lane.points[(i+1)%lane.points.length],bx=Math.max(0,Math.min(a.x,b.x)-x,x-Math.max(a.x,b.x)),bz=Math.max(0,Math.min(a.z,b.z)-z,z-Math.max(a.z,b.z));if(bx*bx+bz*bz>=bestSquared)continue;let p=closestOnSegment(x,z,a,b);if(p.distance*p.distance<bestSquared){bestSquared=p.distance*p.distance;let from=lane.closed?i:a.progress,to=lane.closed?i+1:b.progress;best={...p,progress:from+(to-from)*p.t,width:lane.width}}}return best}
-function findSurface(x,z){let best=null;for(const lane of lanes){let p=laneDistance(x,z,lane);p.score=p.distance-(p.width-1.5);if(!best||p.score<best.score)best=p}return best}
+function findSurface(x,z){let best=null;for(const lane of lanes){let p=laneDistance(x,z,lane);p.score=p.distance-(p.width-1.5);p.supported=!lane.closed||!gapAt(p.progress);if(!best||p.score<best.score)best=p}return best}
 function containCar() {
   let surface=findSurface(car.x,car.z);
+  if(car.airborne)return {...surface,supported:surface.supported&&surface.distance<=surface.width-1.5};
   const limit=surface.width-1.5;
   if(surface.distance>limit+0.001) {
     const nx=(car.x-surface.x)/surface.distance;
@@ -149,10 +152,10 @@ function containCar() {
   return surface;
 }
 let frameDt=.016,previousRampIndex=0;
-function buildFences(){lanes=[{points:road,width:track.width,closed:true},...shortcuts.map(b=>({points:b.points,width:b.width,closed:false}))];fences=[];for(const lane of lanes){for(let i=0;i<lane.points.length-(lane.closed?0:1);i++){let p=lane.points[i],q=lane.points[(i+1)%lane.points.length];for(const side of [-1,1]){let a={x:p.x+p.nx*side*lane.width,z:p.z+p.nz*side*lane.width,y:p.y},b={x:q.x+q.nx*side*lane.width,z:q.z+q.nz*side*lane.width,y:q.y};
+function buildFences(){lanes=[{points:road,width:track.width,closed:true},...shortcuts.map(b=>({points:b.points,width:b.width,closed:false}))];fences=[];for(const lane of lanes){for(let i=0;i<lane.points.length-(lane.closed?0:1);i++){let p=lane.points[i],q=lane.points[(i+1)%lane.points.length];if(lane.closed&&gapAt(i))continue;for(const side of [-1,1]){let a={x:p.x+p.nx*side*lane.width,z:p.z+p.nz*side*lane.width,y:p.y},b={x:q.x+q.nx*side*lane.width,z:q.z+q.nz*side*lane.width,y:q.y};
 // Split rails at junctions, leaving the whole connecting roadway open.
 for(let k=0;k<3;k++){let f=k/3,g=(k+1)/3,point=t=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t}),start=point(f),end=point(g),mid=point((f+g)/2);if(lanes.some(other=>other!==lane&&laneDistance(mid.x,mid.z,other).distance<other.width+.8))continue;fences.push({a:start,b:end,post:i%5===0&&k===0})}}}}}
-function drawFeature(i,p,q){if(boosts.some(b=>Math.abs(i-b.index)<2)){for(let side of [-.5,0,.5])poly([edge(p,side-.12,13,.08),edge(q,side-.12,13,.08),edge(q,side+.12,13,.08),edge(p,side+.12,13,.08)],'#7fffd2')}for(const ramp of ramps)if(i>=ramp.start&&i<=ramp.end){poly([edge(p,-.95,13,.08),edge(q,-.95,13,.08),edge(q,-.8,13,.08),edge(p,-.8,13,.08)],'#ffca75');poly([edge(p,.8,13,.08),edge(q,.8,13,.08),edge(q,.95,13,.08),edge(p,.95,13,.08)],'#ffca75');if(i===ramp.end)poly([edge(p,-1,13,.1),edge(q,-1,13,.1),edge(q,1,13,.1),edge(p,1,13,.1)],'#ffca75')}}
+function drawFeature(i,p,q){for(const ramp of ramps){if(i===ramp.end-1||i===ramp.landing){const lip=i===ramp.landing?p:q;poly([edge(lip,-1,13,-18),edge(lip,1,13,-18),edge(lip,1,13),edge(lip,-1,13)],'#596257');poly([edge(p,-1,13,.16),edge(q,-1,13,.16),edge(q,1,13,.16),edge(p,1,13,.16)],i===ramp.landing?'#91d9bc':'#ffbd62');}if(i>=ramp.start&&i<ramp.end){for(const side of [-1,1])poly([edge(p,side*.65,13,.2),edge(q,side*.2,13,.2),edge(q,side*.38,13,.2),edge(p,side*.83,13,.2)],'#fff1b5');}}if(boosts.some(b=>Math.abs(i-b.index)<2)){for(let side of [-.5,0,.5])poly([edge(p,side-.12,13,.08),edge(q,side-.12,13,.08),edge(q,side+.12,13,.08),edge(p,side+.12,13,.08)],'#7fffd2')}for(const ramp of ramps)if(i>=ramp.start&&i<=ramp.end){poly([edge(p,-.95,13,.08),edge(q,-.95,13,.08),edge(q,-.8,13,.08),edge(p,-.8,13,.08)],'#ffca75');poly([edge(p,.8,13,.08),edge(q,.8,13,.08),edge(q,.95,13,.08),edge(p,.95,13,.08)],'#ffca75');if(i===ramp.end)poly([edge(p,-1,13,.1),edge(q,-1,13,.1),edge(q,1,13,.1),edge(p,1,13,.1)],'#ffca75')}}
 function drawFence(f){let a=f.a,b=f.b,up=(p,h)=>({...p,y:p.y+h});poly([up(a,.65),up(b,.65),up(b,1.45),up(a,1.45)],'#b8c5b0');poly([up(a,1.45),up(b,1.45),{...b,x:b.x+.12,y:b.y+1.55},{...a,x:a.x+.12,y:a.y+1.55}],track.accent);if(f.post)box(a.x,a.y,a.z,.35,1.8,.35,0,'#566556')}
 
 function selectTrack(id){selected=id;track=tracks[id];road.splice(0,road.length,...sampleRoad(id));buildFeatures();buildShortcuts();buildFences();buildObstacles();resetRace();best=0;try{best=Number(localStorage.getItem(bestKey()))||0}catch(e){};car={...road[0],v:0};keys={};state='intro';$('intro').classList.remove('hidden');$('hud').style.display='none';$('result').style.display='none';$('message').textContent='';$('courses').style.display='none';$('tracklabel').textContent=track.name.toUpperCase()+' / '+String(id+1).padStart(2,'0');$('coursebutton').textContent=track.name+' ↗';$('trackmeta').textContent=String(id+1).padStart(2,'0')+' / LEVEL '+track.difficulty+' · '+(track.width*2).toFixed(1)+' M WIDE · '+(track.length/1000).toFixed(2)+' KM';$('description').textContent=id===0?'A ribbon of asphalt. An endless salt flat. Find your line. Leave everything behind.':track.name+'. '+track.style.toLowerCase()+' turns. A new line to master. Make every millisecond count.';$('description').textContent=layouts[id%17][0]+' / '+(shortcuts.length?'Narrow shortcut marked in lime. ':'')+track.theme.name+' / '+['daybreak','late light','hazy afternoon'][track.variant]+'. Hold Space while turning, release for turbo. Collect 3 coins for nitro (E). Tap Space just before landing for a trick boost.';$('hint').textContent=track.theme.name.toUpperCase()+' · DODGE '+track.theme.hazard.toUpperCase();document.title='APEX — '+track.name}
@@ -233,23 +236,30 @@ function updateDriving(dt) {
 
 function updateHeight(dt,surface) {
   const ground=surface.y;
+  const progress=surface.progress??nearest;
   const mainDistance=Math.hypot(car.x-road[nearest].x,car.z-road[nearest].z);
   for(const ramp of ramps) {
-    if(!car.airborne&&car.v>20&&car.rampLock===0&&previousRampIndex<=ramp.end&&nearest>ramp.end&&nearest<=ramp.end+3&&mainDistance<track.width) {
+    if(!car.airborne&&car.v>20&&car.rampLock===0&&previousRampIndex<=ramp.end&&progress>=ramp.end&&progress<=ramp.end+3&&mainDistance<track.width) {
       car.airborne=true;
-      car.vy=Math.max(6,car.v*0.13);
+      car.y=Math.max(car.y,road[ramp.end].y);
+      const crossingTime=ramp.gapLength/Math.max(25,car.v),rise=road[ramp.landing].y-car.y;
+      car.vy=Math.max(8,Math.min(15,car.v*.25),(rise+6*crossingTime*crossingTime)/crossingTime+3);
+      car.flightRamp=ramp;
       car.rampLock=2;
-      announce('TAKE FLIGHT');
+      announce('WINGS OUT / GLIDE THE GAP');
     }
   }
   previousRampIndex=nearest;
+  if(!car.airborne&&surface.supported===false){car.airborne=true;car.vy=0;car.flightRamp=gapAt(surface.progress);announce('GAP / BUILD SPEED ON THE RAMP');}
   if(!car.airborne) {car.y=ground;return;}
   runAir+=dt;
-  car.vy-=19*dt;
+  car.vy=Math.max(-12,car.vy-12*dt);
   car.y+=car.vy*dt;
-  if(car.y>ground)return;
+  if(car.y<ground-35){const ramp=car.flightRamp||ramps[0],p=road[ramp.start-5];car.x=p.x;car.z=p.z;car.y=p.y;car.angle=p.angle;car.motionAngle=p.angle;car.v=0;car.lateral=0;car.vy=0;car.airborne=false;car.flightRamp=null;car.driftDirection=0;driftCharge=0;travel-=Math.max(0,nearest-(ramp.start-5));previous=nearest=previousRampIndex=ramp.start-5;elapsed+=2;runHits++;impact=.2;announce('MISSED GAP / TRY AGAIN +2s');return;}
+  if(car.y>ground||surface.supported===false)return;
   car.y=ground;
   car.airborne=false;
+  car.flightRamp=null;
   const hard=car.vy<-13;
   car.vy=0;
   if(hard){car.v*=0.9;impact=0.15;announce('HARD LANDING');}
@@ -291,7 +301,7 @@ function updateHUD() {
   $('useboost').textContent=nitro?'E / NITRO × '+nitro:'E / COLLECT 3 COINS';
   $('driftfill').style.width=(driftCharge/2.5*100)+'%';
   $('driftfill').style.background=['','#67dcff','#ffbc57','#ef8dff'][tier];
-  $('driftlabel').textContent=wasDrift?(tier===3?'RELEASE / ULTRA TURBO':tier===2?'RELEASE / SUPER TURBO':'CHARGING DRIFT'):boostTime>0?'BOOST!':'SPACE + TURN / HOLD TO CHARGE';
+  $('driftlabel').textContent=car.airborne?'WINGS DEPLOYED / STEER TO LAND':wasDrift?(tier===3?'RELEASE / ULTRA TURBO':tier===2?'RELEASE / SUPER TURBO':'CHARGING DRIFT'):boostTime>0?'BOOST!':'SPACE + TURN / HOLD TO CHARGE';
 }
 
 function update(dt) {
@@ -356,11 +366,11 @@ if(state==='intro'){let t=now*.000025,extent=Math.max(...road.map(p=>Math.hypot(
 // Ground seams give a sense of scale and speed without texture assets.
 for(let i=-10;i<=10;i++){poly([{x:i*100,y:-15,z:-1200},{x:i*100+1,y:-15,z:-1200},{x:i*100+1,y:-15,z:1200},{x:i*100,y:-15,z:1200}],'#b6b39d')}
 for(const branch of shortcuts){let pts=branch.points,w=branch.width;for(let j=0;j<pts.length-1;j++){let a=pts[j],b=pts[j+1];const e=(p,side,width)=>({x:p.x+p.nx*side*width,y:p.y,z:p.z+p.nz*side*width});poly([e(a,-1,w),e(b,-1,w),e(b,1,w),e(a,1,w)],'#53684b');for(let side of [-1,1])poly([e(a,side,w),e(b,side,w),e(b,side,w-.5),e(a,side,w-.5)],'#d9ff5f');if(j%8===0)box(a.x,a.y,a.z,.4,1,.4,0,'#d9ff5f')}let p=pts[3];box(p.x+p.nx*(w+1),p.y,p.z+p.nz*(w+1),1,6,1,0,'#d9ff5f')}
-let ordered=[...road.map((p,i)=>({p,i,depth:project(p).z})),...pickups.filter(c=>!c.taken).map(coin=>({coin,depth:project(coin).z})),...fences.map(f=>({f,depth:project({x:(f.a.x+f.b.x)/2,y:(f.a.y+f.b.y)/2,z:(f.a.z+f.b.z)/2}).z}))].sort((a,b)=>b.depth-a.depth);for(let {p,i,f,coin} of ordered){if(coin){let spin=now*.002;box(coin.x,coin.y+.4+Math.sin(spin+coin.index)*.3,coin.z,1.5,2,.3,spin,'#ffe578');continue}if(f){drawFence(f);continue}let q=road[(i+1)%N];poly([edge(p,-1,14,-3),edge(q,-1,14,-3),edge(q,1,14,-3),edge(p,1,14,-3)],'#6d7768');poly([edge(p,-1),edge(q,-1),edge(q,1),edge(p,1)],i%2?'#37433e':'#39453f');for(let side of [-1,1]){poly([edge(p,side,13),edge(q,side,13),edge(q,side,11.9),edge(p,side,11.9)],Math.floor(i/3)%2?'#d6d9bf':'#a4b778');}if(i%12<5)poly([edge(p,-.025,13,.03),edge(q,-.025,13,.03),edge(q,.025,13,.03),edge(p,.025,13,.03)],'#a4ac91');if(i===0){for(let j=0;j<10;j++)poly([edge(p,-1+j*.2),edge(q,-1+j*.2),edge(q,-.8+j*.2),edge(p,-.8+j*.2)],j%2?'#edf0d6':'#192d26')}
+let ordered=[...road.map((p,i)=>({p,i,depth:project(p).z})),...pickups.filter(c=>!c.taken).map(coin=>({coin,depth:project(coin).z})),...fences.map(f=>({f,depth:project({x:(f.a.x+f.b.x)/2,y:(f.a.y+f.b.y)/2,z:(f.a.z+f.b.z)/2}).z}))].sort((a,b)=>b.depth-a.depth);for(let {p,i,f,coin} of ordered){if(coin){let spin=now*.002;box(coin.x,coin.y+.4+Math.sin(spin+coin.index)*.3,coin.z,1.5,2,.3,spin,'#ffe578');continue}if(f){drawFence(f);continue}let q=road[(i+1)%N];if(gapAt(i)){poly([edge(p,-1,15,-32),edge(q,-1,15,-32),edge(q,1,15,-32),edge(p,1,15,-32)],'#293c42');for(const side of [-1,1])poly([edge(p,side,14,-32),edge(q,side,14,-32),edge(q,side,14,-5),edge(p,side,14,-5)],'#645747');continue;}poly([edge(p,-1,14,-3),edge(q,-1,14,-3),edge(q,1,14,-3),edge(p,1,14,-3)],'#6d7768');poly([edge(p,-1),edge(q,-1),edge(q,1),edge(p,1)],i%2?'#37433e':'#39453f');for(let side of [-1,1]){poly([edge(p,side,13),edge(q,side,13),edge(q,side,11.9),edge(p,side,11.9)],Math.floor(i/3)%2?'#d6d9bf':'#a4b778');}if(i%12<5)poly([edge(p,-.025,13,.03),edge(q,-.025,13,.03),edge(q,.025,13,.03),edge(p,.025,13,.03)],'#a4ac91');if(i===0){for(let j=0;j<10;j++)poly([edge(p,-1+j*.2),edge(q,-1+j*.2),edge(q,-.8+j*.2),edge(p,-.8+j*.2)],j%2?'#edf0d6':'#192d26')}
 drawFeature(i,p,q);if(i%12===0)scenery(p,i);for(const o of obstacles)if(o.index===i)drawObstacle(o);if(i%30===0){box(p.x+p.nx*(track.width+4),p.y,p.z+p.nz*(track.width+4),1,5,1,0,track.accent);box(p.x-p.nx*(track.width+4),p.y,p.z-p.nz*(track.width+4),1,5,1,0,track.accent)}}
 let p=road[0];box(p.x+p.nx*(track.width+2),p.y,p.z+p.nz*(track.width+2),1.1,15,1.1,0,'#263c31');box(p.x-p.nx*(track.width+2),p.y,p.z-p.nz*(track.width+2),1.1,15,1.1,0,'#263c31');box(p.x,p.y+14,p.z,track.width*2+6,2,1,p.angle,track.accent);
 let c=state==='intro'?{...road[18],v:0}:car;drawKart({...c,y:c.y+Math.sin((c.hopTime||0)/.18*Math.PI)*.55,angle:c.angle},track.accent);if(boostTime>0||driftCharge>.6){let color=boostTime>0?'#ffb34b':driftCharge>1.25?'#ffbb55':'#6ce4ff';for(const side of [-1,1])box(c.x-Math.sin(c.angle)*3+Math.cos(c.angle)*side,c.y+.3,c.z-Math.cos(c.angle)*3-Math.sin(c.angle)*side,.6,.6,boostTime>0?4:1,c.angle,color)}
-let mapScale=90/Math.max(...road.map(p=>Math.max(Math.abs(p.x),Math.abs(p.z))));if(impact>0){ctx.fillStyle='rgba(255,115,65,'+(impact*.22)+')';ctx.fillRect(0,0,W,H)}mc.clearRect(0,0,330,220);mc.strokeStyle='#56675466';mc.lineWidth=5;mc.beginPath();road.forEach((p,i)=>{let x=165+p.x*mapScale,y=110+p.z*mapScale;i?mc.lineTo(x,y):mc.moveTo(x,y)});mc.closePath();mc.stroke();mc.strokeStyle='#6b9837';mc.lineWidth=3;for(const branch of shortcuts){mc.beginPath();branch.points.forEach((p,i)=>{let x=165+p.x*mapScale,y=110+p.z*mapScale;i?mc.lineTo(x,y):mc.moveTo(x,y)});mc.stroke()}mc.fillStyle='#c17d42';for(const o of obstacles){mc.fillRect(163+o.x*mapScale,108+o.z*mapScale,4,4)}mc.fillStyle='#334e35';mc.beginPath();mc.arc(165+car.x*mapScale,110+car.z*mapScale,6,0,7);mc.fill();}
+let mapScale=90/Math.max(...road.map(p=>Math.max(Math.abs(p.x),Math.abs(p.z))));if(impact>0){ctx.fillStyle='rgba(255,115,65,'+(impact*.22)+')';ctx.fillRect(0,0,W,H)}mc.clearRect(0,0,330,220);mc.strokeStyle='#56675466';mc.lineWidth=5;mc.beginPath();road.forEach((p,i)=>{let x=165+p.x*mapScale,y=110+p.z*mapScale;i&&!gapAt(i-1)?mc.lineTo(x,y):mc.moveTo(x,y)});mc.closePath();mc.stroke();mc.strokeStyle='#6b9837';mc.lineWidth=3;for(const branch of shortcuts){mc.beginPath();branch.points.forEach((p,i)=>{let x=165+p.x*mapScale,y=110+p.z*mapScale;i?mc.lineTo(x,y):mc.moveTo(x,y)});mc.stroke()}mc.fillStyle='#c17d42';for(const o of obstacles){mc.fillRect(163+o.x*mapScale,108+o.z*mapScale,4,4)}mc.fillStyle='#334e35';mc.beginPath();mc.arc(165+car.x*mapScale,110+car.z*mapScale,6,0,7);mc.fill();}
 function loop(now) {
   const seconds=last?Math.max(0,(now-last)/1000):TUNING.step;
   last=now;

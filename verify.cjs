@@ -63,7 +63,7 @@ keys={};const coast=car.v;update(.05);if(car.v<coast*.8)throw Error('coasting mo
 reset();state='racing';const ramp=ramps[0];previousRampIndex=ramp.end;nearest=ramp.end;previous=ramp.end;
 car.x=road[ramp.end+1].x;car.z=road[ramp.end+1].z;car.y=road[ramp.end].y;car.angle=road[ramp.end+1].angle;car.v=45;
 update(.001);if(!car.airborne||car.vy<=0)throw Error('ramp takeoff');
-for(let i=0;i<500&&car.airborne;i++)update(1/120);
+for(let i=0;i<1500&&car.airborne;i++)update(1/120);
 if(car.airborne||runAir<.2)throw Error('gravity and landing');
 reset();if(car.airborne||car.vy||car.lateral||runAir)throw Error('physics reset');
 console.log('PASS: reverse, reverse steering, braking, coasting, ramp launch, gravity, landing, physics reset');
@@ -135,6 +135,36 @@ openCourses();closeCourses();if(state!=='racing')throw Error('atlas resume');
 handlers.blur();openCourses();closeCourses();if(state!=='paused')throw Error('atlas lost paused state');
 reset();update(3);updateHUD();if($('pause').textContent!=='PAUSE Ⅱ')throw Error('restart pause label');
 console.log('PASS: on-screen pause/resume, frozen timer, countdown blur recovery, cleared controls, Escape repeat, atlas pause preservation, restart');
+`,env);
+vm.runInContext(`
+for(let id=0;id<51;id++){
+ selectTrack(id);
+ for(const ramp of ramps){
+  reset();state='racing';const tip=road[ramp.end],spacing=track.length/N;
+  if(ramp.height<10||ramp.gapLength<95)throw Error('ramp or gap dimensions '+id);
+  const middle=(ramp.end+ramp.landing)/2,base=Math.floor(middle),fraction=middle-base;
+  const point={x:road[base].x+(road[base+1].x-road[base].x)*fraction,z:road[base].z+(road[base+1].z-road[base].z)*fraction};
+  if(findSurface(point.x,point.z).supported)throw Error('solid roadway in jump gap '+id);
+  car.x=tip.x;car.z=tip.z;car.y=tip.y;car.v=45;car.rampLock=0;previousRampIndex=ramp.end;nearest=ramp.end;
+  updateHeight(.001,{y:tip.y,supported:false,progress:ramp.end+.01});if(!car.airborne||car.vy<=0)throw Error('winged takeoff at exact gap edge '+id);
+  const duration=ramp.gapLength/45;
+  for(let t=0;t<duration;t+=1/120){
+   const progress=ramp.end+Math.min(t/duration,.999)*(ramp.landing-ramp.end),a=Math.floor(progress),f=progress-a,b=road[a+1];
+   car.x=road[a].x+(b.x-road[a].x)*f;car.z=road[a].z+(b.z-road[a].z)*f;nearest=a;
+   updateHeight(1/120,{y:road[a].y+(b.y-road[a].y)*f,supported:false});
+   if(!car.airborne)throw Error('landed on missing road '+id);
+  }
+  if(car.y<road[ramp.landing].y)throw Error('cannot clear landing edge at 45 m/s '+id);
+  car.x=road[ramp.landing].x;car.z=road[ramp.landing].z;nearest=ramp.landing;
+  for(let i=0;i<1200&&car.airborne;i++)updateHeight(1/120,{y:road[ramp.landing].y,supported:true});
+  if(car.airborne||runHits)throw Error('failed supported landing '+id);
+ }
+}
+selectTrack(0);reset();state='racing';const missed=ramps[0];nearest=missed.end+2;previousRampIndex=nearest;car.x=road[nearest].x;car.z=road[nearest].z;car.y=road[nearest].y;car.v=0;travel=nearest;
+for(let i=0;i<1200;i++){updateHeight(1/120,{y:road[missed.landing].y,supported:false});if(runHits)break}
+if(runHits!==1||car.airborne||nearest!==missed.start-5||elapsed!==2||travel!==nearest)throw Error('missed jump recovery');
+reset();car.airborne=true;car.x=road[0].x+500;const airborneX=car.x;containCar();if(car.x!==airborneX)throw Error('invisible airborne guardrail');drawKart(car,track.accent);
+console.log('PASS: 102 ramp launches and gap crossings, unsupported gaps, landing clearance, wing rendering, no airborne walls, missed-gap recovery and penalty');
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 

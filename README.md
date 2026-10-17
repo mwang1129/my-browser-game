@@ -24,6 +24,8 @@ Hold W / Up + Space + A / Left or D / Right together to activate drift in the pr
 
 Collect three coins to earn one nitro charge (up to three stored). Amber ramps launch the kart; tap Space within 0.35 seconds before a clean landing for a trick boost. Mint road markings indicate boost lines. Results show lap time, airtime, contacts, drift boosts, and tricks.
 
+Amber chevrons lead up steep takeoff ramps into open gaps, with mint landing edges on the far side. Wings deploy automatically in the air and fold away on landing. Carry speed into the ramp, then steer toward the landing while gliding. Missing a gap returns you to the approach with a two-second penalty. Jump locations favor straighter sections of each circuit.
+
 ## Circuits
 
 Explore 51 Circuits opens the atlas. There are 17 route families and 17 environment themes with later variations. Courses have wider roads and rounded corners; difficulty increases across the atlas. Each has a narrower lime-edged shortcut, ramps, coins, boost lines, obstacles, and guardrails with junction openings. Personal bests are stored separately per circuit in this browser.
