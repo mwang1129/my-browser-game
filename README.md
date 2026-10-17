@@ -1,5 +1,7 @@
 # APEX / Solo Turbo Trials
 
+Play online: https://mwang1129.github.io/my-browser-game/
+
 Open `dist/index.html` in Microsoft Edge or another modern browser. The game is a single self-contained HTML file with no dependencies or internet requirement.
 
 ## Controls
