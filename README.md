@@ -24,11 +24,15 @@ Hold W / Up + Space + A / Left or D / Right together to activate drift in the pr
 
 Collect glowing cyan-and-lime boxes to store turbo power-ups (up to three). Each box grants one power-up immediately; press E to use one whenever you choose. A turbo adds an immediate speed kick and three seconds of strong acceleration, raising the top speed from 90 to 145 m/s. Holding E uses only one power-up; release and press again to use another. Amber ramps launch the kart; tap Space within 0.35 seconds before a clean landing for a trick boost. Mint road markings indicate boost lines. Results show lap time, airtime, contacts, drift boosts, and tricks.
 
-Amber chevrons lead up steep takeoff ramps into open gaps at least 160 metres long, with mint landing edges on the far side. Wings deploy automatically in the air and fold away on landing. Takeoff clears sideways drift and points toward the landing. A/D or Left/Right directly steer the glide; releasing steering holds the current direction without turning by itself. Glide speed is maintained without holding the accelerator. Missing a gap returns you to the approach with a two-second penalty. Jump locations favor straighter sections of each circuit.
+Amber chevrons lead up steep takeoff ramps into open gaps at least 160 metres long, with mint landing edges on the far side. Wings deploy automatically in the air and fold away on landing. Takeoff clears sideways drift while keeping your heading; there is no automatic steering toward the landing. A/D or Left/Right smoothly bank and turn the glide. Releasing steering lets the turn settle without continued sideways drift. A softer chase camera, subtle vertical movement, and wing banking give flight a floating feel. Glide speed is maintained without holding the accelerator. Missing a gap returns you to the approach with a two-second penalty. Jump locations favor straighter sections of each circuit.
+
+Sound uses a warm, filtered engine tone with layered harmonics. Flying adds rushing wind and a gentle wing flutter. All sounds stop immediately while paused, muted, or outside a race.
 
 ## Circuits
 
 Explore 51 Circuits opens the atlas. There are 17 route families and 17 environment themes with later variations. Courses have wider roads and rounded corners; difficulty increases across the atlas. Each has a narrower lime-edged shortcut, ramps, power-up boxes, boost lines, obstacles, and guardrails with junction openings. Personal bests are stored separately per circuit in this browser.
+
+Every standard circuit has two flight sections. Course previews and the minimap mark amber takeoffs and mint landings. The final slot is **Skyway Stunt Park**, a bonus course with six ramp-and-gap jumps and 36 obstacles, replacing Horizon Crown. Its records are stored separately from the previous final circuit.
 
 ## Files and verification
 

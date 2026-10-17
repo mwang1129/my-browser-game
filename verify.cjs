@@ -3,7 +3,18 @@ const chunks=[];const vm={createContext:()=>{},runInContext:code=>chunks.push(co
 const elements={};const noop=()=>{};const context=new Proxy({}, {get:(o,k)=>k==='createLinearGradient'?()=>({addColorStop:noop}):noop,set:()=>true});
 function el(id){return elements[id]??={style:{},classList:{add:noop,remove:noop},focus:noop,querySelectorAll:()=>[],getContext:()=>context,textContent:'',width:0,height:0}}
 const handlers={};
+const audioParam=()=>({value:0,cancelScheduledValues(){},setValueAtTime(value){this.value=value},setTargetAtTime(value){this.value=value}});
+class FakeAudioContext{
+ constructor(){this.currentTime=0;this.sampleRate=200;this.destination={};}
+ createGain(){return {gain:audioParam(),connect(){}}}
+ createOscillator(){return {frequency:audioParam(),connect(){},start(){}}}
+ createBiquadFilter(){return {frequency:audioParam(),Q:audioParam(),connect(){}}}
+ createBuffer(channels,length){return {getChannelData:()=>new Float32Array(length)}}
+ createBufferSource(){return {connect(){},start(){}}}
+ resume(){return Promise.resolve()}
+}
 const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:(name,handler)=>handlers[name]=handler,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console,handlers};vm.createContext(env);
+env.AudioContext=FakeAudioContext;
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
 vm.runInContext(`reset(); update(2.6); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
@@ -164,7 +175,7 @@ selectTrack(0);reset();state='racing';const missed=ramps[0];nearest=missed.end+2
 for(let i=0;i<1200;i++){updateHeight(1/120,{y:road[missed.landing].y,supported:false});if(runHits)break}
 if(runHits!==1||car.airborne||nearest!==missed.start-5||elapsed!==2||travel!==nearest)throw Error('missed jump recovery');
 reset();car.airborne=true;car.x=road[0].x+500;const airborneX=car.x;containCar();if(car.x!==airborneX)throw Error('invisible airborne guardrail');drawKart(car,track.accent);
-console.log('PASS: 102 ramp launches and gap crossings, unsupported gaps, landing clearance, wing rendering, no airborne walls, missed-gap recovery and penalty');
+console.log('PASS: 106 ramp launches and gap crossings, unsupported gaps, landing clearance, wing rendering, no airborne walls, missed-gap recovery and penalty');
 `,env);
 vm.runInContext(`
 selectTrack(0);reset();state='racing';const flightRamp=ramps[0],tip=road[flightRamp.end];
@@ -175,8 +186,8 @@ for(let i=0;i<120;i++)updateDriving(1/120);
 const crosswind=(car.x-startX)*Math.cos(flightHeading)-(car.z-startZ)*Math.sin(flightHeading);
 if(Math.abs(crosswind)>1e-7||Math.abs(car.angle-flightHeading)>1e-7||Math.abs(car.lateral)>1e-7||car.v<59)throw Error('uncommanded glide drift or speed loss');
 const forwardHeading=car.angle;keys={d:true};for(let i=0;i<60;i++)updateDriving(1/120);
-if(car.angle-forwardHeading<.4||Math.abs(car.motionAngle-car.angle)>1e-8)throw Error('air steering response');
-keys={};const releasedHeading=car.angle;for(let i=0;i<60;i++)updateDriving(1/120);if(Math.abs(car.angle-releasedHeading)>1e-8)throw Error('air steering continues after release');
+if(car.angle-forwardHeading<.2||Math.abs(car.motionAngle-car.angle)>.15||car.airBank>-.15)throw Error('smooth banked air steering');
+keys={};for(let i=0;i<120;i++)updateDriving(1/120);const settledHeading=car.angle;for(let i=0;i<120;i++)updateDriving(1/120);if(Math.abs(car.angle-settledHeading)>.002||Math.abs(car.lateral)>.1||Math.abs(car.airBank)>.01)throw Error('air turn does not settle after release');
 reset();state='racing';powerups=3;keys={e:true};updateRace(.01,0,false);const heldCount=powerups;
 for(let i=0;i<120;i++)updateRace(1/120,0,false);if(powerups!==heldCount)throw Error('held E drains inventory');
 keys={};updateRace(.01,0,false);keys={e:true};updateRace(.01,0,false);if(powerups!==heldCount-1)throw Error('second E press');
@@ -184,7 +195,22 @@ reset();state='racing';powerups=3;const item=pickups[0];car.x=item.x;car.z=item.
 usePowerup();updateRace(.01,0,false);if(powerups!==3||!item.taken)throw Error('stored box collection');
 reset();state='racing';car.v=90;powerups=1;usePowerup();keys={w:true};for(let i=0;i<120;i++)updateDriving(1/120);if(car.v<135)throw Error('turbo does not produce a substantial speed boost');
 powerups=0;const emptySpeed=car.v;usePowerup();if(car.v!==emptySpeed||powerups!==0)throw Error('empty power-up use');
-console.log('PASS: zero neutral air drift, immediate air steering and release, maintained glide speed, stored power-ups, single use per E press, full inventory, strong turbo speed');
+console.log('PASS: zero neutral air drift, smooth banked steering and settled release, maintained glide speed, stored power-ups, single use per E press, full inventory, strong turbo speed');
+`,env);
+vm.runInContext(`
+for(let id=0;id<51;id++){selectTrack(id);if(ramps.length!==(id===50?6:2))throw Error('flight sections missing '+id);for(let i=1;i<ramps.length;i++)if(ramps[i].start<=ramps[i-1].landing+4)throw Error('overlapping flight sections '+id)}
+if(!track.bonus||track.name!=='Skyway Stunt Park'||obstacles.length!==36||new Set(obstacles.map(o=>o.index)).size!==36)throw Error('bonus stunt course');
+openCourses();if(($('coursegrid').innerHTML.match(/FLIGHT SECTIONS/g)||[]).length!==51||!$('coursegrid').innerHTML.includes('6 FLIGHT SECTIONS · 36 OBSTACLES'))throw Error('atlas flight markers');closeCourses();
+selectTrack(0);reset();state='racing';muted=false;initAudio();
+if(!soundNodes||osc.type!=='triangle'||gain.gain.value<=0)throw Error('layered engine sound');
+car.airborne=true;car.v=60;syncAudio();if(soundNodes.wing.gain.value<=0||soundNodes.flutterDepth.gain.value<=0)throw Error('wing sound missing');
+pauseRace();if(gain.gain.value!==0)throw Error('pause did not immediately silence audio');
+loop(100);if(gain.gain.value!==0)throw Error('paused animation has audio');
+togglePause();syncAudio();if(gain.gain.value<=0)throw Error('resume audio');
+car.airborne=false;syncAudio();if(soundNodes.wing.gain.value!==0||soundNodes.flutterDepth.gain.value!==0)throw Error('wing sound on ground');
+for(const screen of ['intro','countdown','paused','finished']){state=screen;gain.gain.value=1;syncAudio();if(gain.gain.value!==0)throw Error('audio leaks on '+screen)}
+state='racing';muted=true;syncAudio();if(gain.gain.value!==0)throw Error('mute audio');
+console.log('PASS: layered engine, flight wind/flutter, immediate pause silence, paused render audio gate, resume/mute, 106 marked flight sections, six-jump 36-obstacle bonus map');
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
