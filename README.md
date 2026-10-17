@@ -30,6 +30,8 @@ Sound uses a quiet bass engine rumble, subtle filtered exhaust, and a restrained
 
 Touchdown sweeps the wheels along their full motion between physics steps against the rendered road triangles, including slopes and shortcuts. This catches fast descents and rising road surfaces without clipping through them. Grounded wheels use the same surface geometry, so the kart does not sink on the frame after touchdown. Nearby lane heights cannot trigger a landing. Wings fold gradually and the chase camera eases back after contact rather than snapping to its ground position.
 
+Finish a full lap by crossing the visible start/finish line forward, between its posts. Reaching the end of the progress bar alone does not finish the race. The clock stops at the crossing, including airborne crossings; reverse crossings and crossings outside the gate do not count. Results hide the driving controls, and Replay starts a fresh countdown.
+
 ## Circuits
 
 Explore 51 Circuits opens the atlas. There are 17 route families and 17 environment themes with later variations. Courses have wider roads and rounded corners; difficulty increases across the atlas. Each has a narrower lime-edged shortcut, ramps, power-up boxes, boost lines, obstacles, and guardrails with junction openings. Personal bests are stored separately per circuit in this browser.

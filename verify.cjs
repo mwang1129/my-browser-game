@@ -16,7 +16,7 @@ class FakeAudioContext{
 const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:(name,handler)=>handlers[name]=handler,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console,handlers};vm.createContext(env);
 env.AudioContext=FakeAudioContext;
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
-vm.runInContext(`reset(); update(2.6); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
+vm.runInContext(`function driveThroughFinish(){const p=road[0];car.x=p.x-Math.sin(p.angle);car.z=p.z-Math.cos(p.angle);car.y=p.y+1;car.angle=car.motionAngle=p.angle;car.airborne=false;car.v=20;keys={w:true};previous=N-1;update(.1)};reset(); update(2.6); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='racing')throw Error('finished before crossing line');travel=N;driveThroughFinish();if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
 if(tracks.length!==51||new Set(tracks.map(t=>t.name)).size!==51)throw Error('track count');
 for(let i=1;i<tracks.length;i++){let a=tracks[i-1],b=tracks[i];if(!(b.width<a.width&&b.elevation>a.elevation&&b.penalty>a.penalty))throw Error('difficulty progression '+i)}
@@ -29,7 +29,7 @@ for(let id=0;id<51;id++){
  reset();update(2.6);elapsed=20;
  // Follow each sampled point through a full lap to exercise progress wrapping.
  for(let i=1;i<=N;i++){car.x=road[i%N].x;car.z=road[i%N].z;car.y=road[i%N].y+1;car.airborne=false;car.v=0;update(.016);if(state==='finished')break}
- if(state!=='finished'||!saved.has(bestKey()))throw Error('lap finish '+id);
+ driveThroughFinish();if(state!=='finished'||!saved.has(bestKey()))throw Error('lap finish '+id);
  draw(0);reset();if(elapsed!==0||travel!==0)throw Error('restart '+id);
 }
 if(signatures.size!==51||saved.size!==51)throw Error('uniqueness or record isolation');
@@ -55,7 +55,7 @@ for(let id=0;id<51;id++){
  for(const p of branch.points)follow(p);
  if(Math.abs(travel-branch.end)>4)throw Error('shortcut progress '+id+': '+travel);
  for(let i=branch.end+1;i<N;i++){follow(road[i]);if(state==='finished')break}
- if(state!=='finished')throw Error('shortcut finish '+id);
+ driveThroughFinish();if(state!=='finished')throw Error('shortcut finish '+id);
  // Test both road edges at a point away from a shortcut junction.
  for(const side of [-1,1]){reset();const p=road[5];car.x=p.x+p.nx*side*(track.width+4);car.z=p.z+p.nz*side*(track.width+4);const before=findSurface(car.x,car.z);car.angle=Math.atan2(car.x-before.x,car.z-before.z);car.v=60;containCar();const surface=findSurface(car.x,car.z);if(surface.score>.01||(before.score>0&&car.v>=60))throw Error('guardrail containment '+id)}
  if(!fences.length)throw Error('missing guardrails '+id);
@@ -245,6 +245,24 @@ vm.runInContext(`
  const fast=sweptWheelContact({x:0,z:10,y:30,angle:0},-30);if(!fast||Math.abs(fast.y-5.7)>1e-6)throw Error('fast descent tunneled through surface');
  lanes=[];if(sweptWheelContact({x:0,z:10,y:30,angle:0},-30)!==null)throw Error('swept hit inside open gap');lanes=originalLanes;
  console.log('PASS: swept sloped touchdown, no post-landing ground penetration, no premature or below-road landing, fast descent collision, open gaps');
+}
+`,env);
+vm.runInContext(`
+{
+ selectTrack(0);const p=road[0],point=(forward,side=0,y=p.y)=>({x:p.x+Math.sin(p.angle)*forward+Math.cos(p.angle)*side,z:p.z+Math.cos(p.angle)*forward-Math.sin(p.angle)*side,y});
+ function prepare(progress= N){reset();state='racing';travel=progress;elapsed=9;keys={w:true};}
+ function cross(from,to){Object.assign(car,to);return checkFinish(from,.1)}
+ prepare();if(cross(point(-10),point(-2))||state!=='racing')throw Error('early finish');
+ prepare(0);if(cross(point(-1),point(1)))throw Error('finish without full lap');
+ prepare();if(cross(point(1),point(-1)))throw Error('reverse finish');
+ prepare();if(cross(point(-1,track.width+3),point(1,track.width+3)))throw Error('finish outside gate');
+ prepare();if(cross(point(-1,0,p.y-3),point(1,0,p.y-3)))throw Error('finish underneath road');
+ prepare();if(!cross(point(-3),point(7))||Math.abs(elapsed-8.93)>1e-8||Math.abs((car.x-p.x)*Math.sin(p.angle)+(car.z-p.z)*Math.cos(p.angle))>1e-8)throw Error('crossing time or position');
+ if(state!=='finished'||Object.keys(keys).length||$('hud').style.display!=='none'||$('result').style.display!=='flex')throw Error('finish controls/results');
+ const finalElapsed=elapsed,finalBest=best;update(.5);finish();if(elapsed!==finalElapsed||best!==finalBest)throw Error('duplicate or moving finish');
+ prepare();car.airborne=true;if(!cross(point(-1,0,p.y+8),point(1,0,p.y+8)))throw Error('legitimate airborne finish');
+ reset();if(state!=='countdown'||travel!==0||$('hud').style.display!=='block'||$('result').style.display!=='none')throw Error('replay after results');
+ console.log('PASS: exact forward finish-line crossing, no early/reverse/off-road/under-road finish, full-lap requirement, sub-10-second and airborne finishes, precise timing, frozen results, replay');
 }
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
