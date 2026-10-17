@@ -202,7 +202,7 @@ for(let id=0;id<51;id++){selectTrack(id);if(ramps.length!==(id===50?6:2))throw E
 if(!track.bonus||track.name!=='Skyway Stunt Park'||obstacles.length!==36||new Set(obstacles.map(o=>o.index)).size!==36)throw Error('bonus stunt course');
 openCourses();if(($('coursegrid').innerHTML.match(/FLIGHT SECTIONS/g)||[]).length!==51||!$('coursegrid').innerHTML.includes('6 FLIGHT SECTIONS · 36 OBSTACLES'))throw Error('atlas flight markers');closeCourses();
 selectTrack(0);reset();state='racing';muted=false;initAudio();
-if(!soundNodes||osc.type!=='triangle'||gain.gain.value<=0)throw Error('layered engine sound');
+if(!soundNodes||osc.type!=='sine'||gain.gain.value<=0)throw Error('layered engine sound');
 car.airborne=true;car.v=60;syncAudio();if(soundNodes.wing.gain.value<=0||soundNodes.flutterDepth.gain.value<=0)throw Error('wing sound missing');
 pauseRace();if(gain.gain.value!==0)throw Error('pause did not immediately silence audio');
 loop(100);if(gain.gain.value!==0)throw Error('paused animation has audio');
@@ -214,16 +214,37 @@ console.log('PASS: layered engine, flight wind/flutter, immediate pause silence,
 `,env);
 vm.runInContext(`
 {
- selectTrack(0);reset();state='racing';const floor=road[0].y;
+ selectTrack(0);reset();state='racing';const floor=road[0].y,originalLanes=lanes;
+ const flatLane={points:[{x:car.x,z:car.z-10,y:floor,nx:1,nz:0,progress:0},{x:car.x,z:car.z+10,y:floor,nx:1,nz:0,progress:1}],width:10,closed:false};lanes=[flatLane];
  function airborneAt(y,vy){car.airborne=true;car.y=y;car.vy=vy;car.v=0;car.flightRamp=ramps[0];nearest=previousRampIndex=0;}
  airborneAt(floor+4,-2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne)throw Error('landed above road');
  airborneAt(floor-.1,2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne||car.y>=floor)throw Error('snapped up while ascending below platform');
  airborneAt(floor-2,-2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne||car.y>=floor)throw Error('snapped up to platform from below');
  airborneAt(floor+4,-2);updateHeight(.01,{y:floor+60,supported:false});if(!car.airborne||runHits)throw Error('nearby high platform forced recovery');
- airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:false});if(!car.airborne)throw Error('landed in open gap');
- airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:true});if(car.airborne||car.y!==floor)throw Error('missed real descending touchdown');
+ lanes=[];airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:false});if(!car.airborne)throw Error('landed in open gap');lanes=[flatLane];
+ airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:true});if(car.airborne||Math.abs(car.y-floor)>1e-8)throw Error('missed real descending touchdown');
+ airborneAt(floor+4.005,-1);updateHeight(.01,{y:floor+4,supported:true});if(!car.airborne||car.y<=floor)throw Error('used nearby lane height instead of rendered wheel surface');
+ car.airborne=false;car.flightBlend=1;car.wingOpen=1;updateCamera(1/120);if(car.flightBlend<.95||car.wingOpen<.94)throw Error('instant camera or wing snap at touchdown');
+ state='racing';muted=false;car.v=0;keys={w:true};syncAudio();const idlePitch=osc.frequency.value;car.v=90;syncAudio();if(osc.frequency.value-idlePitch>30||soundNodes.engine.gain.value>.075||soundNodes.filter.frequency.value>350||soundNodes.exhaust.gain.value<=0)throw Error('harsh acceleration sound');muted=true;syncAudio();
+ lanes=originalLanes;
  airborneAt(floor+20,0);car.angle=car.motionAngle=0;car.airYaw=0;car.v=60;keys={d:true};for(let i=0;i<30;i++)updateDriving(1/120);if(car.angle<.17||car.motionAngle<.08)throw Error('air steering not sensitive enough');
- console.log('PASS: no landing above road, no upward snap from below, no high-platform recovery, real descending wheel contact only, faster air steering response');
+ console.log('PASS: rendered-road wheel contact, no nearby-lane height snap, no airborne/platform/gap landing, smooth camera and wing touchdown, quieter low-pitch engine, sensitive air steering');
+}
+`,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';const originalLanes=lanes;
+ lanes=[{points:[{x:0,z:0,y:0,nx:1,nz:0,progress:0},{x:0,z:20,y:10,nx:1,nz:0,progress:1}],width:10,closed:false}];
+ const start={x:0,z:2,y:4,angle:0};car={...car,x:0,z:10,y:4,angle:0,airborne:true,vy:-2,v:0,flightRamp:ramps[0]};nearest=previousRampIndex=0;
+ updateHeight(.1,{y:5,supported:true},start);
+ if(car.airborne||car.z<=start.z||car.z>=10||Math.abs(car.y-(car.z+1.4)*.5)>1e-6)throw Error('tunneled into rising road instead of stopping at first wheel contact');
+ const savedZ=car.z,savedY=car.y;updateHeight(.01,{y:car.z*.5,supported:true});if(Math.abs(car.z-savedZ)>1e-8||Math.abs(car.y-savedY)>1e-6)throw Error('sank into slope on grounded frame after touchdown');
+ car.x=0;car.z=10;car.angle=0;
+ if(sweptWheelContact({x:0,z:10,y:9,angle:0},8)!==null)throw Error('swept landing before touching road');
+ if(sweptWheelContact({x:0,z:10,y:1,angle:0},0)!==null)throw Error('swept snap onto road from below');
+ const fast=sweptWheelContact({x:0,z:10,y:30,angle:0},-30);if(!fast||Math.abs(fast.y-5.7)>1e-6)throw Error('fast descent tunneled through surface');
+ lanes=[];if(sweptWheelContact({x:0,z:10,y:30,angle:0},-30)!==null)throw Error('swept hit inside open gap');lanes=originalLanes;
+ console.log('PASS: swept sloped touchdown, no post-landing ground penetration, no premature or below-road landing, fast descent collision, open gaps');
 }
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));

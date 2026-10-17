@@ -26,7 +26,9 @@ Collect glowing cyan-and-lime boxes to store turbo power-ups (up to three). Each
 
 Amber chevrons lead up steep takeoff ramps into open gaps at least 160 metres long, with mint landing edges on the far side. Wings deploy automatically in the air and fold away on landing. Takeoff clears sideways drift while keeping your heading; there is no automatic steering toward the landing. A/D or Left/Right smoothly bank and turn the glide. Releasing steering lets the turn settle without continued sideways drift. A softer chase camera, subtle vertical movement, and wing banking give flight a floating feel. Glide speed is maintained without holding the accelerator. Missing a gap returns you to the approach with a two-second penalty. Jump locations favor straighter sections of each circuit.
 
-Sound uses a warm, filtered engine tone with layered harmonics. Flying adds rushing wind and a gentle wing flutter. All sounds stop immediately while paused, muted, or outside a race.
+Sound uses a quiet bass engine rumble, subtle filtered exhaust, and a restrained acceleration pitch range. Flying adds rushing wind and a gentle wing flutter. All sounds stop immediately while paused, muted, or outside a race.
+
+Touchdown sweeps the wheels along their full motion between physics steps against the rendered road triangles, including slopes and shortcuts. This catches fast descents and rising road surfaces without clipping through them. Grounded wheels use the same surface geometry, so the kart does not sink on the frame after touchdown. Nearby lane heights cannot trigger a landing. Wings fold gradually and the chase camera eases back after contact rather than snapping to its ground position.
 
 ## Circuits
 
