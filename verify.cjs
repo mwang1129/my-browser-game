@@ -297,6 +297,24 @@ vm.runInContext(`
  console.log('PASS: 52 distinct music themes, home/map switching, sequencer playback, pause/mute silence, modest tyre-edge landing forgiveness without early or far-edge snaps');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';const originalLanes=lanes;
+ lanes=[{points:[{x:0,z:0,y:0,nx:1,nz:0,progress:0},{x:0,z:20,y:10,nx:1,nz:0,progress:1}],width:10,closed:false}];
+ const start={x:0,z:2,y:4,angle:0};car={...car,x:0,z:10,y:4,angle:0,airborne:true,vy:2,v:0,flightRamp:ramps[0]};nearest=previousRampIndex=0;
+ updateHeight(.1,{y:5,supported:true},start);if(car.airborne||Math.abs(car.y-(car.z+1.95)*.5)>1e-6)throw Error('ascending kart passed through rising road');lanes=originalLanes;
+ for(let id=0;id<51;id++){selectTrack(id);for(const ramp of ramps){reset();state='racing';const index=Math.floor((ramp.end+ramp.landing)/2),p=road[index];car={...car,x:p.x,z:p.z,y:p.y+10,angle:p.angle,airborne:true,vy:-2,flightRamp:ramp};
+  const hit=sweptWheelContact({...car},p.y-60,'pit');if(!hit||hit.y>p.y-20)throw Error('missing rendered pit floor collision '+id);
+  car.y=hit.y+.01;const start={x:car.x,z:car.z,y:car.y,angle:car.angle};nearest=previousRampIndex=index;travel=index;
+  updateHeight(.01,{y:p.y,supported:false,progress:index},start);if(car.airborne||runHits!==1||nearest!==ramp.start-5)throw Error('flew through pit floor before recovery '+id);
+ }}
+ selectTrack(0);reset();const ramp=ramps[0],p=road[ramp.landing],behind=(distance,y)=>({x:p.x-Math.sin(p.angle)*distance,z:p.z-Math.cos(p.angle)*distance,y,angle:p.angle});
+ Object.assign(car,behind(.5,p.y-2));if(!landingWallContact(behind(4,p.y-2),p.y-2))throw Error('flies through landing platform face');
+ Object.assign(car,behind(.5,p.y+3));if(landingWallContact(behind(4,p.y+3),p.y+3))throw Error('platform wall blocks a clear jump');
+ muted=false;state='racing';car.airborne=true;car.v=90;syncAudio();if(soundNodes.wing.gain.value>.7||soundNodes.flutterDepth.gain.value>.025)throw Error('wind mix still too loud');muted=true;syncAudio();
+ console.log('PASS: rising-road collision while ascending, all 106 pit-floor recoveries at visible contact, solid landing platform faces, clear jumps unblocked, quieter gliding wind');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 

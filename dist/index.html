@@ -133,12 +133,12 @@ function findSurface(x,z){let best=null;for(const lane of lanes){let p=laneDista
 // center-line height. Only a downward wheel sweep can make contact.
 function triangleHeight(x,z,a,b,c,bounded=true){const denominator=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(denominator)<1e-8)return null;const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/denominator,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/denominator,w=1-u-v;if(bounded&&(u<-.000001||v<-.000001||w<-.000001))return null;return u*a.y+v*b.y+w*c.y}
 function wheelContact(previousY,nextY){if(nextY>=previousY)return null;let contact=null;const wheels=[];for(const side of [-1,1])for(const end of [-1,1])wheels.push({x:car.x+side*2.05*Math.cos(car.angle)+end*1.95*Math.sin(car.angle),z:car.z-side*2.05*Math.sin(car.angle)+end*1.95*Math.cos(car.angle)});for(const lane of lanes){for(let i=0;i<lane.points.length-(lane.closed?0:1);i++){if(lane.closed&&gapAt(i))continue;const p=lane.points[i],q=lane.points[(i+1)%lane.points.length],e=(point,side)=>({x:point.x+point.nx*side*lane.width,y:point.y,z:point.z+point.nz*side*lane.width}),a=e(p,-1),b=e(q,-1),c=e(q,1),d=e(p,1);if(Math.max(p.y,q.y)<nextY||Math.min(p.y,q.y)>previousY)continue;for(const wheel of wheels){if(wheel.x<Math.min(a.x,b.x,c.x,d.x)||wheel.x>Math.max(a.x,b.x,c.x,d.x)||wheel.z<Math.min(a.z,b.z,c.z,d.z)||wheel.z>Math.max(a.z,b.z,c.z,d.z))continue;for(const triangle of [[a,b,c],[a,c,d]]){const height=triangleHeight(wheel.x,wheel.z,...triangle);if(height!==null&&height<=previousY&&height>=nextY&&(contact===null||height>contact))contact=height}}}}return contact}
-function sweptWheelContact(start,nextY){
+function sweptWheelContact(start,nextY,kind='road'){
   let contact=null;
   for(const lane of lanes)for(let i=0;i<lane.points.length-(lane.closed?0:1);i++){
-    if(lane.closed&&gapAt(i))continue;
-    const p=lane.points[i],q=lane.points[(i+1)%lane.points.length],e=(point,side)=>({x:point.x+point.nx*side*lane.width,y:point.y,z:point.z+point.nz*side*lane.width}),a=e(p,-1),b=e(q,-1),c=e(q,1),d=e(p,1);
-    if(Math.max(p.y,q.y)<Math.min(start.y,nextY)||Math.min(p.y,q.y)>Math.max(start.y,nextY))continue;
+    const gap=lane.closed&&gapAt(i);if(kind==='pit'?!gap:!!gap)continue;
+    const p=lane.points[i],q=lane.points[(i+1)%lane.points.length],width=kind==='pit'?lane.width*15/13:lane.width,offset=kind==='pit'?-32:0,e=(point,side)=>({x:point.x+point.nx*side*width,y:point.y+offset,z:point.z+point.nz*side*width}),a=e(p,-1),b=e(q,-1),c=e(q,1),d=e(p,1);
+    if(Math.max(p.y,q.y)+offset<Math.min(start.y,nextY)||Math.min(p.y,q.y)+offset>Math.max(start.y,nextY))continue;
     for(const side of [-1,1])for(const end of [-1,1]){
       const wheel=(position)=>({x:position.x+side*2.05*Math.cos(position.angle)+end*1.95*Math.sin(position.angle),z:position.z-side*2.05*Math.sin(position.angle)+end*1.95*Math.cos(position.angle)}),from=wheel(start),to=wheel(car);
       if(Math.max(from.x,to.x)<Math.min(a.x,b.x,c.x,d.x)||Math.min(from.x,to.x)>Math.max(a.x,b.x,c.x,d.x)||Math.max(from.z,to.z)<Math.min(a.z,b.z,c.z,d.z)||Math.min(from.z,to.z)>Math.max(a.z,b.z,c.z,d.z))continue;
@@ -153,6 +153,7 @@ function sweptWheelContact(start,nextY){
   }
   return contact;
 }
+function landingWallContact(start,nextY){let contact=null;for(const ramp of ramps){const p=road[ramp.landing],fx=Math.sin(p.angle),fz=Math.cos(p.angle),extent=2.05*Math.abs(Math.sin(car.angle-p.angle))+1.95*Math.abs(Math.cos(car.angle-p.angle)),before=(start.x-p.x)*fx+(start.z-p.z)*fz+extent,after=(car.x-p.x)*fx+(car.z-p.z)*fz+extent;if(before>1e-6||after<0||after-before<1e-8)continue;const t=Math.max(0,Math.min(1,-before/(after-before))),x=start.x+(car.x-start.x)*t,z=start.z+(car.z-start.z)*t,y=start.y+(nextY-start.y)*t;if(Math.abs((x-p.x)*fz-(z-p.z)*fx)>track.width+1.5||y>=p.y-.05||y+2.5<=p.y-18)continue;if(!contact||t<contact.t)contact={t,x:x-fx*.02,z:z-fz*.02,y};}return contact;}
 function containCar() {
   let surface=findSurface(car.x,car.z);
   if(car.airborne)return {...surface,supported:surface.supported&&surface.distance<=surface.width-1.5};
@@ -212,7 +213,7 @@ function initAudio(){if(muted){syncAudio();return;}try{if(!audio){
   const flutter=audio.createOscillator(),flutterDepth=audio.createGain();flutter.type='sine';flutter.frequency.value=7;flutterDepth.gain.value=0;flutter.connect(flutterDepth);flutterDepth.connect(wing.gain);flutter.start();
   soundNodes={engine,filter,harmonic,wing,wingFilter,flutterDepth,exhaust,music:createMusic()};
 }audio.resume().catch(()=>{});syncAudio();}catch(e){}}
-function syncAudio(){if(!audio||!gain||!soundNodes)return;syncMusic();const time=audio.currentTime,playing=!muted&&state==='racing';gain.gain.cancelScheduledValues(time);if(!playing){gain.gain.setValueAtTime(0,time);return;}gain.gain.setTargetAtTime(.45,time,.025);const speed=Math.abs(car.v||0),powered=!!(keys.w||keys.arrowup)||boostTime>0;osc.frequency.setTargetAtTime(38+Math.min(speed,110)*.18+(boostTime>0?2:0),time,.3);soundNodes.harmonic.frequency.setTargetAtTime(76+Math.min(speed,110)*.36,time,.3);soundNodes.filter.frequency.setTargetAtTime(180+Math.min(speed,110)*1.2,time,.2);soundNodes.engine.gain.setTargetAtTime(car.airborne?.008:powered?.04:.022,time,.25);soundNodes.exhaust.gain.setTargetAtTime(car.airborne?.02:powered?.24:.08,time,.25);soundNodes.wing.gain.setTargetAtTime(car.airborne?1+speed*.006:0,time,.16);soundNodes.flutterDepth.gain.setTargetAtTime(car.airborne?.045:0,time,.16);soundNodes.wingFilter.frequency.setTargetAtTime(car.airborne?850+speed*5:700,time,.1);}
+function syncAudio(){if(!audio||!gain||!soundNodes)return;syncMusic();const time=audio.currentTime,playing=!muted&&state==='racing';gain.gain.cancelScheduledValues(time);if(!playing){gain.gain.setValueAtTime(0,time);return;}gain.gain.setTargetAtTime(.45,time,.025);const speed=Math.abs(car.v||0),powered=!!(keys.w||keys.arrowup)||boostTime>0;osc.frequency.setTargetAtTime(38+Math.min(speed,110)*.18+(boostTime>0?2:0),time,.3);soundNodes.harmonic.frequency.setTargetAtTime(76+Math.min(speed,110)*.36,time,.3);soundNodes.filter.frequency.setTargetAtTime(180+Math.min(speed,110)*1.2,time,.2);soundNodes.engine.gain.setTargetAtTime(car.airborne?.008:powered?.04:.022,time,.25);soundNodes.exhaust.gain.setTargetAtTime(car.airborne?.02:powered?.24:.08,time,.25);soundNodes.wing.gain.setTargetAtTime(car.airborne?.45+speed*.0025:0,time,.2);soundNodes.flutterDepth.gain.setTargetAtTime(car.airborne?.02:0,time,.2);soundNodes.wingFilter.frequency.setTargetAtTime(car.airborne?850+speed*5:700,time,.1);}
 $('start').onclick=reset;$('replay').onclick=reset;$('home').onclick=()=>{state='intro';$('result').style.display='none';$('intro').classList.remove('hidden');$('hud').style.display='none';$('message').textContent=''};$('sound').onclick=()=>{muted=!muted;$('sound').textContent=muted?'SOUND OFF':'SOUND ON';initAudio()};
 addEventListener('keydown',e=>{let k=e.key.toLowerCase();if($('courses').style.display==='block')return;if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k))e.preventDefault();keys[k]=true;if(e.repeat&&['r','enter','escape'].includes(k))return;if(k==='r')reset();if(k==='enter'&&['intro','finished'].includes(state)){e.preventDefault();reset();}if(k==='escape')togglePause()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);addEventListener('blur',pauseRace);
 document.querySelectorAll('[data-key]').forEach(b=>{b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys[b.dataset.key]=true};b.onpointerup=b.onpointercancel=()=>keys[b.dataset.key]=false});
@@ -285,6 +286,7 @@ function updateDriving(dt) {
   return {steer,driftButton};
 }
 
+function recoverMissedGap(){const ramp=car.flightRamp||ramps[0],p=road[ramp.start-5];car.x=p.x;car.z=p.z;car.y=p.y;car.angle=p.angle;car.motionAngle=p.angle;car.v=0;car.lateral=0;car.vy=0;car.airborne=false;car.flightRamp=null;car.driftDirection=0;driftCharge=0;travel-=Math.max(0,nearest-(ramp.start-5));previous=nearest=previousRampIndex=ramp.start-5;elapsed+=2;runHits++;impact=.2;announce('MISSED GAP / TRY AGAIN +2s');}
 function updateHeight(dt,surface,movementStart) {
   const ground=surface.y;
   const progress=surface.progress??nearest;
@@ -310,8 +312,11 @@ function updateHeight(dt,surface,movementStart) {
   car.vy=Math.max(-12,car.vy-12*dt);
   car.y+=car.vy*dt;
   const flightFloor=car.flightRamp?Math.min(road[car.flightRamp.end].y,road[car.flightRamp.landing].y)-45:Math.min(...road.map(p=>p.y))-45;
-  if(car.y<flightFloor){const ramp=car.flightRamp||ramps[0],p=road[ramp.start-5];car.x=p.x;car.z=p.z;car.y=p.y;car.angle=p.angle;car.motionAngle=p.angle;car.v=0;car.lateral=0;car.vy=0;car.airborne=false;car.flightRamp=null;car.driftDirection=0;driftCharge=0;travel-=Math.max(0,nearest-(ramp.start-5));previous=nearest=previousRampIndex=ramp.start-5;elapsed+=2;runHits++;impact=.2;announce('MISSED GAP / TRY AGAIN +2s');return;}
-  const swept=car.vy<0&&movementStart?sweptWheelContact(movementStart,car.y):null;
+  if(car.y<flightFloor){recoverMissedGap();return;}
+  const start=movementStart||{x:car.x,z:car.z,y:previousY,angle:car.angle};
+  const swept=sweptWheelContact(start,car.y),pit=sweptWheelContact(start,car.y,'pit'),wall=landingWallContact(start,car.y);
+  if(wall&&(!swept||wall.t<swept.t)&&(!pit||wall.t<pit.t)){car.x=wall.x;car.z=wall.z;car.y=wall.y;car.v*=.18;car.vy=Math.min(car.vy,-2);if(hitCooldown<=0){runHits++;hitCooldown=.65;impact=.25;announce('LANDING EDGE / TOO LOW');}return;}
+  if(pit&&(!swept||pit.t<swept.t)){recoverMissedGap();return;}
   const contact=swept?swept.y:car.vy<0?wheelContact(previousY,car.y):null;
   if(contact===null)return;
   if(swept){car.x=swept.x;car.z=swept.z;}
