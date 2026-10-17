@@ -228,14 +228,14 @@ function updateDriving(dt) {
   const turnInput=drifting?(steer?car.wheel:car.driftDirection*0.25):car.wheel;
   let yaw=turnInput*(TUNING.turnRate+(TUNING.fastTurnRate-TUNING.turnRate)*speedFactor);
   yaw*=Math.sign(car.v)*Math.min(1,Math.abs(car.v)/5)*(drifting?TUNING.driftTurn:1);
-  if(car.airborne){const response=steer?3.8:6;car.airYaw=((car.airYaw||0)+(steer*.95-(car.airYaw||0))*(1-Math.exp(-dt*response)));if(!steer&&Math.abs(car.airYaw)<.002)car.airYaw=0;yaw=car.airYaw;car.airBank=((car.airBank||0)+(-steer*.32-(car.airBank||0))*(1-Math.exp(-dt*4)));}else{car.airYaw=0;car.airBank=(car.airBank||0)*Math.exp(-dt*10);}
+  if(car.airborne){const response=steer?6.5:9;car.airYaw=((car.airYaw||0)+(steer*1.5-(car.airYaw||0))*(1-Math.exp(-dt*response)));if(!steer&&Math.abs(car.airYaw)<.002)car.airYaw=0;yaw=car.airYaw;car.airBank=((car.airBank||0)+(-steer*.4-(car.airBank||0))*(1-Math.exp(-dt*6)));}else{car.airYaw=0;car.airBank=(car.airBank||0)*Math.exp(-dt*10);}
   if(!Number.isFinite(car.motionAngle))car.motionAngle=car.angle;
   car.angle+=yaw*dt;
   // Body heading and velocity heading are independent. Reduced rear grip lets
   // momentum carry the car sideways while steering rotates its body.
   let slip=Math.atan2(Math.sin(car.angle-car.motionAngle),Math.cos(car.angle-car.motionAngle));
   const grip=car.airborne?0.12:drifting?1.7:14;
-  if(car.airborne)car.motionAngle+=slip*(1-Math.exp(-dt*7));
+  if(car.airborne)car.motionAngle+=slip*(1-Math.exp(-dt*11));
   else car.motionAngle+=slip*(1-Math.exp(-dt*grip));
   slip=Math.atan2(Math.sin(car.angle-car.motionAngle),Math.cos(car.angle-car.motionAngle));
   // Progressive grip beyond 55 degrees prevents an uncontrollable spin.
@@ -268,11 +268,15 @@ function updateHeight(dt,surface) {
   previousRampIndex=nearest;
   if(!car.airborne&&surface.supported===false){car.airborne=true;car.vy=0;car.flightRamp=gapAt(surface.progress);announce('GAP / BUILD SPEED ON THE RAMP');}
   if(!car.airborne) {car.y=ground;return;}
+  const previousY=car.y;
   runAir+=dt;car.flightAge=(car.flightAge||0)+dt;
   car.vy=Math.max(-12,car.vy-12*dt);
   car.y+=car.vy*dt;
-  if(car.y<ground-35){const ramp=car.flightRamp||ramps[0],p=road[ramp.start-5];car.x=p.x;car.z=p.z;car.y=p.y;car.angle=p.angle;car.motionAngle=p.angle;car.v=0;car.lateral=0;car.vy=0;car.airborne=false;car.flightRamp=null;car.driftDirection=0;driftCharge=0;travel-=Math.max(0,nearest-(ramp.start-5));previous=nearest=previousRampIndex=ramp.start-5;elapsed+=2;runHits++;impact=.2;announce('MISSED GAP / TRY AGAIN +2s');return;}
-  if(car.y>ground||surface.supported===false)return;
+  const flightFloor=car.flightRamp?Math.min(road[car.flightRamp.end].y,road[car.flightRamp.landing].y)-45:Math.min(...road.map(p=>p.y))-45;
+  if(car.y<flightFloor){const ramp=car.flightRamp||ramps[0],p=road[ramp.start-5];car.x=p.x;car.z=p.z;car.y=p.y;car.angle=p.angle;car.motionAngle=p.angle;car.v=0;car.lateral=0;car.vy=0;car.airborne=false;car.flightRamp=null;car.driftDirection=0;driftCharge=0;travel-=Math.max(0,nearest-(ramp.start-5));previous=nearest=previousRampIndex=ramp.start-5;elapsed+=2;runHits++;impact=.2;announce('MISSED GAP / TRY AGAIN +2s');return;}
+  // Touch down only when the wheels descend through a real road surface.
+  // A higher platform beside/above the kart must never pull it up into a landing.
+  if(car.y>ground||surface.supported===false||car.vy>=0||previousY<ground)return;
   car.y=ground;
   car.airborne=false;
   car.flightRamp=null;

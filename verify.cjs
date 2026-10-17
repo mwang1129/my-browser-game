@@ -28,7 +28,7 @@ for(let id=0;id<51;id++){
  if(Math.max(...lengths)/Math.min(...lengths)>1.1)throw Error('uneven sampling '+id);
  reset();update(2.6);elapsed=20;
  // Follow each sampled point through a full lap to exercise progress wrapping.
- for(let i=1;i<=N;i++){car.x=road[i%N].x;car.z=road[i%N].z;car.v=0;update(.016);if(state==='finished')break}
+ for(let i=1;i<=N;i++){car.x=road[i%N].x;car.z=road[i%N].z;car.y=road[i%N].y+1;car.airborne=false;car.v=0;update(.016);if(state==='finished')break}
  if(state!=='finished'||!saved.has(bestKey()))throw Error('lap finish '+id);
  draw(0);reset();if(elapsed!==0||travel!==0)throw Error('restart '+id);
 }
@@ -50,7 +50,7 @@ for(let id=0;id<51;id++){
  selectTrack(id);if(shortcuts.length!==1)throw Error('missing shortcut '+id);const branch=shortcuts[0];
  if(branch.width>=track.width||branch.start<20||branch.end>N-20)throw Error('shortcut bounds');
  reset();update(2.6);elapsed=20;
- function follow(p){car.x=p.x;car.z=p.z;car.v=0;update(.016)}
+ function follow(p){car.x=p.x;car.z=p.z;car.y=p.y+1;car.airborne=false;car.v=0;update(.016)}
  for(let i=1;i<=branch.start;i++)follow(road[i]);
  for(const p of branch.points)follow(p);
  if(Math.abs(travel-branch.end)>4)throw Error('shortcut progress '+id+': '+travel);
@@ -211,6 +211,20 @@ car.airborne=false;syncAudio();if(soundNodes.wing.gain.value!==0||soundNodes.flu
 for(const screen of ['intro','countdown','paused','finished']){state=screen;gain.gain.value=1;syncAudio();if(gain.gain.value!==0)throw Error('audio leaks on '+screen)}
 state='racing';muted=true;syncAudio();if(gain.gain.value!==0)throw Error('mute audio');
 console.log('PASS: layered engine, flight wind/flutter, immediate pause silence, paused render audio gate, resume/mute, 106 marked flight sections, six-jump 36-obstacle bonus map');
+`,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';const floor=road[0].y;
+ function airborneAt(y,vy){car.airborne=true;car.y=y;car.vy=vy;car.v=0;car.flightRamp=ramps[0];nearest=previousRampIndex=0;}
+ airborneAt(floor+4,-2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne)throw Error('landed above road');
+ airborneAt(floor-.1,2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne||car.y>=floor)throw Error('snapped up while ascending below platform');
+ airborneAt(floor-2,-2);updateHeight(.01,{y:floor,supported:true});if(!car.airborne||car.y>=floor)throw Error('snapped up to platform from below');
+ airborneAt(floor+4,-2);updateHeight(.01,{y:floor+60,supported:false});if(!car.airborne||runHits)throw Error('nearby high platform forced recovery');
+ airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:false});if(!car.airborne)throw Error('landed in open gap');
+ airborneAt(floor+.005,-1);updateHeight(.01,{y:floor,supported:true});if(car.airborne||car.y!==floor)throw Error('missed real descending touchdown');
+ airborneAt(floor+20,0);car.angle=car.motionAngle=0;car.airYaw=0;car.v=60;keys={d:true};for(let i=0;i<30;i++)updateDriving(1/120);if(car.angle<.17||car.motionAngle<.08)throw Error('air steering not sensitive enough');
+ console.log('PASS: no landing above road, no upward snap from below, no high-platform recovery, real descending wheel contact only, faster air steering response');
+}
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
