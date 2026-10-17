@@ -265,6 +265,24 @@ vm.runInContext(`
  console.log('PASS: exact forward finish-line crossing, no early/reverse/off-road/under-road finish, full-lap requirement, sub-10-second and airborne finishes, precise timing, frozen results, replay');
 }
 `,env);
+vm.runInContext(`
+{
+ for(let id=0;id<51;id++){
+  selectTrack(id);reset();state='racing';for(const progress of [N*.2,N*.5,N*.75,N*.92])updateLapStage(progress);
+  if(lapStage!==4)throw Error('lap checkpoint order '+id);
+  travel=N*.75;elapsed=20;const p=road[0];car={...car,x:p.x-Math.sin(p.angle)*.2,z:p.z-Math.cos(p.angle)*.2,y:p.y+40,angle:p.angle,motionAngle:p.angle,v:90,airborne:true,vy:-2};keys={};
+  update(TUNING.step);if(state!=='finished')throw Error('gliding finish with lost nearest-lane progress '+id);
+ }
+ selectTrack(0);reset();state='racing';for(const progress of [N-1,N*.8,N*.6,N*.3,0])updateLapStage(progress);if(lapStage===4)throw Error('reverse route armed finish');
+ const p=road[0];lapStage=4;travel=N*.7;elapsed=20;car={...car,x:p.x+Math.sin(p.angle),z:p.z+Math.cos(p.angle),y:p.y+4};if(!checkFinish({...p,y:p.y+4},.1))throw Error('crossing from exactly on finish plane');
+ reset();const groundShadow=shadowHeightAt({...road[0],y:road[0].y+20});if(Math.abs(groundShadow-road[0].y)>1e-6)throw Error('shadow not on rendered road');
+ const gap=ramps[0],mid=Math.floor((gap.end+gap.landing)/2),gapShadow=shadowHeightAt({...road[mid],y:road[mid].y+40});if(gapShadow>=road[mid].y-1)throw Error('shadow floats on missing gap road');
+ const originalPoly=poly,shadowPolygons=[];poly=(points,color)=>shadowPolygons.push({points,color});drawKartShadow({...road[0],y:road[0].y+20,airborne:true});poly=originalPoly;
+ if(shadowPolygons.length!==3||shadowPolygons.some(s=>!s.color.startsWith('rgba(')||s.points.some(p=>Math.abs(p.y-groundShadow-.025)>1e-6)))throw Error('invalid soft kart shadow');
+ reset();if(lapStage!==0)throw Error('replay kept finish checkpoints');
+ console.log('PASS: all 51 gliding finishes despite lost progress, ordered/reverse/reset checkpoint handling, exact-plane crossing, road and gap-floor shadows, soft shadow rendering');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 

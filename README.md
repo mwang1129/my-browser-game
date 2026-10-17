@@ -30,7 +30,9 @@ Sound uses a quiet bass engine rumble, subtle filtered exhaust, and a restrained
 
 Touchdown sweeps the wheels along their full motion between physics steps against the rendered road triangles, including slopes and shortcuts. This catches fast descents and rising road surfaces without clipping through them. Grounded wheels use the same surface geometry, so the kart does not sink on the frame after touchdown. Nearby lane heights cannot trigger a landing. Wings fold gradually and the chase camera eases back after contact rather than snapping to its ground position.
 
-Finish a full lap by crossing the visible start/finish line forward, between its posts. Reaching the end of the progress bar alone does not finish the race. The clock stops at the crossing, including airborne crossings; reverse crossings and crossings outside the gate do not count. Results hide the driving controls, and Replay starts a fresh countdown.
+Finish a full lap by crossing the visible start/finish line forward, between its posts. Ordered course checkpoints preserve lap completion when gliding makes the nearest-road progress jump. Reaching the end of the progress bar alone does not finish the race. The clock stops at the crossing, including airborne crossings, before landing or wall corrections can move the kart. Reverse crossings and crossings outside the gate do not count. Results hide the driving controls, and Replay starts a fresh countdown.
+
+A soft shadow follows the kart on the road, terrain, or floor of a jump gap. It spreads and fades with height to make airborne clearance easier to judge.
 
 ## Circuits
 
