@@ -75,7 +75,7 @@ for(let i=0;i<230;i++)updateRace(.01,1,true);
 if(driftCharge<2.2)throw Error('ultra drift charge');updateRace(.01,0,false);if(boostTime<1.7||boostTotal!==1)throw Error('release turbo');
 driftCharge=1;wasDrift=true;car.airborne=false;hitCooldown=.1;updateRace(.01,1,true);if(driftCharge)throw Error('contact cancels drift');hitCooldown=0;
 reset();state='racing';for(const p of pickups.slice(0,3)){car.x=p.x;car.z=p.z;car.y=p.y;updateRace(.01,0,false)}
-if(nitro!==1||coins!==3)throw Error('coin nitro award');keys.e=true;updateRace(.01,0,false);if(nitro!==0||boostTime<1.3)throw Error('nitro use');
+if(powerups!==3)throw Error('one power-up per box');const beforePowerup=car.v;keys.e=true;updateRace(.01,0,false);if(powerups!==2||boostTime<2.9||car.v-beforePowerup<30)throw Error('stored turbo use');
 reset();state='racing';car.airborne=true;car.y=road[0].y+.01;car.vy=-5;elapsed=5;car.airTap=4.9;update(.02);if(trickTotal!==1||boostTime<.8)throw Error('timed landing trick');
 reset();state='racing';car.v=40;keys={w:true,' ':true,d:true};updateDriving(TUNING.step);updateRace(TUNING.step,1,true);
 if(!car.driftDirection||!car.lateral||!car.slipAngle)throw Error('drift momentum and slip');
@@ -83,8 +83,8 @@ for(let i=0;i<80;i++)updateRace(.01,0,true);if(driftCharge<.7||!wasDrift)throw E
 updateRace(.01,-1,true);if(car.driftDirection!==-1)throw Error('switch drift side');for(let i=0;i<80;i++)updateRace(.01,-1,true);
 updateRace(.01,0,false);if(!boostTime||car.driftDirection)throw Error('drift release');
 if(typeof rivals!=='undefined')throw Error('competitors remain');
-reset();if(coins||nitro||driftCharge||boostTime||boostTotal||trickTotal||pickups.some(p=>p.taken))throw Error('kart reset');
-console.log('PASS: high-speed steering, held drift, countersteering, hop, slide, turbo release, contact cancellation, coins, nitro, tricks, solo mode, reset');
+reset();if(powerups||driftCharge||boostTime||boostTotal||trickTotal||pickups.some(p=>p.taken))throw Error('kart reset');
+console.log('PASS: high-speed steering, held drift, countersteering, hop, slide, turbo release, contact cancellation, power-up boxes, stored turbo, tricks, solo mode, reset');
 `,env);
 vm.runInContext(`
 function simulateFrames(fps){selectTrack(0);reset();state='racing';keys={w:true,d:true};for(let i=0;i<fps;i++)advanceFrame(1/fps);return [car.x,car.z,car.angle,car.v,elapsed]}
@@ -141,7 +141,7 @@ for(let id=0;id<51;id++){
  selectTrack(id);
  for(const ramp of ramps){
   reset();state='racing';const tip=road[ramp.end],spacing=track.length/N;
-  if(ramp.height<10||ramp.gapLength<95)throw Error('ramp or gap dimensions '+id);
+  if(ramp.height<10||ramp.gapLength<160)throw Error('ramp or gap dimensions '+id);
   const middle=(ramp.end+ramp.landing)/2,base=Math.floor(middle),fraction=middle-base;
   const point={x:road[base].x+(road[base+1].x-road[base].x)*fraction,z:road[base].z+(road[base+1].z-road[base].z)*fraction};
   if(findSurface(point.x,point.z).supported)throw Error('solid roadway in jump gap '+id);
@@ -165,6 +165,26 @@ for(let i=0;i<1200;i++){updateHeight(1/120,{y:road[missed.landing].y,supported:f
 if(runHits!==1||car.airborne||nearest!==missed.start-5||elapsed!==2||travel!==nearest)throw Error('missed jump recovery');
 reset();car.airborne=true;car.x=road[0].x+500;const airborneX=car.x;containCar();if(car.x!==airborneX)throw Error('invisible airborne guardrail');drawKart(car,track.accent);
 console.log('PASS: 102 ramp launches and gap crossings, unsupported gaps, landing clearance, wing rendering, no airborne walls, missed-gap recovery and penalty');
+`,env);
+vm.runInContext(`
+selectTrack(0);reset();state='racing';const flightRamp=ramps[0],tip=road[flightRamp.end];
+car={...car,x:tip.x,z:tip.z,y:tip.y,v:60,angle:tip.angle+.7,motionAngle:tip.angle-.6,wheel:1,lateral:25,slipAngle:1.3,driftDirection:1};
+nearest=previousRampIndex=flightRamp.end;updateHeight(.001,{y:tip.y,supported:false,progress:flightRamp.end+.01});
+const flightHeading=car.angle,startX=car.x,startZ=car.z;keys={};
+for(let i=0;i<120;i++)updateDriving(1/120);
+const crosswind=(car.x-startX)*Math.cos(flightHeading)-(car.z-startZ)*Math.sin(flightHeading);
+if(Math.abs(crosswind)>1e-7||Math.abs(car.angle-flightHeading)>1e-7||Math.abs(car.lateral)>1e-7||car.v<59)throw Error('uncommanded glide drift or speed loss');
+const forwardHeading=car.angle;keys={d:true};for(let i=0;i<60;i++)updateDriving(1/120);
+if(car.angle-forwardHeading<.4||Math.abs(car.motionAngle-car.angle)>1e-8)throw Error('air steering response');
+keys={};const releasedHeading=car.angle;for(let i=0;i<60;i++)updateDriving(1/120);if(Math.abs(car.angle-releasedHeading)>1e-8)throw Error('air steering continues after release');
+reset();state='racing';powerups=3;keys={e:true};updateRace(.01,0,false);const heldCount=powerups;
+for(let i=0;i<120;i++)updateRace(1/120,0,false);if(powerups!==heldCount)throw Error('held E drains inventory');
+keys={};updateRace(.01,0,false);keys={e:true};updateRace(.01,0,false);if(powerups!==heldCount-1)throw Error('second E press');
+reset();state='racing';powerups=3;const item=pickups[0];car.x=item.x;car.z=item.z;car.y=item.y;updateRace(.01,0,false);if(item.taken)throw Error('full inventory wastes pickup');
+usePowerup();updateRace(.01,0,false);if(powerups!==3||!item.taken)throw Error('stored box collection');
+reset();state='racing';car.v=90;powerups=1;usePowerup();keys={w:true};for(let i=0;i<120;i++)updateDriving(1/120);if(car.v<135)throw Error('turbo does not produce a substantial speed boost');
+powerups=0;const emptySpeed=car.v;usePowerup();if(car.v!==emptySpeed||powerups!==0)throw Error('empty power-up use');
+console.log('PASS: zero neutral air drift, immediate air steering and release, maintained glide speed, stored power-ups, single use per E press, full inventory, strong turbo speed');
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
