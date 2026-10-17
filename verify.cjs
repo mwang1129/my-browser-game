@@ -16,7 +16,7 @@ class FakeAudioContext{
 const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:(name,handler)=>handlers[name]=handler,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console,handlers};vm.createContext(env);
 env.AudioContext=FakeAudioContext;
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
-vm.runInContext(`function driveThroughFinish(){const p=road[0];car.x=p.x-Math.sin(p.angle);car.z=p.z-Math.cos(p.angle);car.y=p.y+1;car.angle=car.motionAngle=p.angle;car.airborne=false;car.v=20;keys={w:true};previous=N-1;update(.1)};reset(); update(2.6); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='racing')throw Error('finished before crossing line');travel=N;driveThroughFinish();if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
+vm.runInContext(`function driveThroughFinish(){const p=road[0];car.x=p.x-Math.sin(p.angle);car.z=p.z-Math.cos(p.angle);car.y=p.y+1;car.angle=car.motionAngle=p.angle;car.airborne=false;car.v=20;keys={w:true};previous=N-1;update(.1)};reset(); update(3.1); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='racing')throw Error('finished before crossing line');travel=N;driveThroughFinish();if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
 if(tracks.length!==51||new Set(tracks.map(t=>t.name)).size!==51)throw Error('track count');
 for(let i=1;i<tracks.length;i++){let a=tracks[i-1],b=tracks[i];if(!(b.width<a.width&&b.elevation>a.elevation&&b.penalty>a.penalty))throw Error('difficulty progression '+i)}
@@ -26,7 +26,7 @@ for(let id=0;id<51;id++){
  signatures.add(JSON.stringify(road.map(p=>[p.x,p.z])));
  const lengths=road.map((p,i)=>Math.hypot(p.x-road[(i+1)%N].x,p.z-road[(i+1)%N].z));
  if(Math.max(...lengths)/Math.min(...lengths)>1.1)throw Error('uneven sampling '+id);
- reset();update(2.6);elapsed=20;
+ reset();update(3.1);elapsed=20;
  // Follow each sampled point through a full lap to exercise progress wrapping.
  for(let i=1;i<=N;i++){car.x=road[i%N].x;car.z=road[i%N].z;car.y=road[i%N].y+1;car.airborne=false;car.v=0;update(.016);if(state==='finished')break}
  driveThroughFinish();if(state!=='finished'||!saved.has(bestKey()))throw Error('lap finish '+id);
@@ -40,7 +40,7 @@ for(let id=0;id<51;id++){
  selectTrack(id);looks.add(track.theme.kind+':'+track.variant);
  if(obstacles.length<priorCount)throw Error('hazard progression');priorCount=obstacles.length;
  for(const o of obstacles){if(o.index<30||o.index>N-30)throw Error('start clearance');if(Math.hypot(o.x-road[o.index].x,o.z-road[o.index].z)-o.radius-1.25<.4)throw Error('center line blocked '+id)}
- reset();update(2.6);const o=obstacles[0];car.x=o.x;car.z=o.z;car.angle=o.angle;car.v=50;nearest=o.index;previous=o.index;update(.001);
+ reset();update(3.1);const o=obstacles[0];car.x=o.x;car.z=o.z;car.angle=o.angle;car.v=50;nearest=o.index;previous=o.index;update(.001);
  if(car.v>20||impact<=0||!hitCooldown)throw Error('obstacle collision '+id);
  const d=Math.hypot(car.x-o.x,car.z-o.z);if(d<o.radius+1.24)throw Error('collision separation');
  reset();if(hitCooldown||impact)throw Error('impact reset');draw(0);
@@ -49,7 +49,7 @@ if(looks.size!==51)throw Error('environment variants');
 for(let id=0;id<51;id++){
  selectTrack(id);if(shortcuts.length!==1)throw Error('missing shortcut '+id);const branch=shortcuts[0];
  if(branch.width>=track.width||branch.start<20||branch.end>N-20)throw Error('shortcut bounds');
- reset();update(2.6);elapsed=20;
+ reset();update(3.1);elapsed=20;
  function follow(p){car.x=p.x;car.z=p.z;car.y=p.y+1;car.airborne=false;car.v=0;update(.016)}
  for(let i=1;i<=branch.start;i++)follow(road[i]);
  for(const p of branch.points)follow(p);
@@ -313,6 +313,21 @@ vm.runInContext(`
  Object.assign(car,behind(.5,p.y+3));if(landingWallContact(behind(4,p.y+3),p.y+3))throw Error('platform wall blocks a clear jump');
  muted=false;state='racing';car.airborne=true;car.v=90;syncAudio();if(soundNodes.wing.gain.value>.7||soundNodes.flutterDepth.gain.value>.025)throw Error('wind mix still too loud');muted=true;syncAudio();
  console.log('PASS: rising-road collision while ascending, all 106 pit-floor recoveries at visible contact, solid landing platform faces, clear jumps unblocked, quieter gliding wind');
+}
+`,env);
+vm.runInContext(`
+{
+ selectTrack(0);muted=false;const originalCue=playCountdownCue,cues=[];playCountdownCue=beat=>{cues.push(beat);originalCue(beat)};
+ reset();while(count>1)update(TUNING.step);keys={w:true};update(TUNING.step);while(state==='countdown')update(TUNING.step);
+ if(car.v<35||boostTime<1.5||JSON.stringify(cues)!==JSON.stringify([3,2,1,'go']))throw Error('perfect start boost or countdown cue sequence');
+ reset();keys={w:true};while(state==='countdown')update(TUNING.step);if(boostTime>0||car.v>2)throw Error('holding forward early awards start boost');
+ reset();while(count>1)update(TUNING.step);keys={arrowup:true};update(TUNING.step);keys={};update(TUNING.step);while(state==='countdown')update(TUNING.step);if(boostTime>0)throw Error('released forward still earns start boost');
+ reset();while(count>.4)update(TUNING.step);keys={w:true};while(state==='countdown')update(TUNING.step);if(boostTime>0)throw Error('late start awards boost');
+ playCountdownCue=originalCue;state='paused';syncAudio();if(soundNodes.cues.bus.gain.value!==0)throw Error('countdown cue audible while paused');
+ for(let id=0;id<51;id++){selectTrack(id);for(const ramp of ramps){reset();state='racing';const a=road[ramp.end-1],p=road[ramp.end],q=road[ramp.end+1],f=.05;car={...car,x:p.x+(q.x-p.x)*f,z:p.z+(q.z-p.z)*f,y:a.y,angle:p.angle,motionAngle:p.angle,v:90};powerups=1;usePowerup();previousRampIndex=nearest=ramp.end;updateHeight(TUNING.step,{y:p.y,supported:false,progress:ramp.end+f},{x:a.x,z:a.z,y:a.y,angle:a.angle});if(!car.airborne||car.v<120||car.rampLock>.5)throw Error('turbo launch recontacts ramp and locks out '+id);}}
+ muted=false;state='racing';car.airborne=true;car.v=145;syncAudio();if(soundNodes.wing.gain.value>.13||soundNodes.flutterDepth.gain.value>.004)throw Error('wind not sufficiently reduced');muted=true;syncAudio();
+ if(TUNING.focalLength>=.7)throw Error('field of view not widened');
+ console.log('PASS: timed forward start boost, no early/released/late boost, 3/2/1/GO sounds, muted paused cues, all 106 turbo ramp-edge launches, much quieter wind, wider field of view');
 }
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));

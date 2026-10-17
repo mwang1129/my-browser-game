@@ -16,6 +16,8 @@ Open `dist/index.html` in Microsoft Edge or another modern browser. The game is 
 - R: restart
 - Escape: pause / resume
 
+For a perfect-start turbo, press and hold W / Up just as **1** appears in the three-second countdown, then keep holding through **GO**. The timing window is the first 0.3 seconds of the displayed 1. Holding forward before that or releasing it before GO does not award the bonus. The countdown has three pitched beeps and a distinct rising GO chime when Sound is on.
+
 Touch buttons appear on narrow screens. Sound is optional.
 
 ## Drift technique
@@ -33,6 +35,8 @@ Touchdown sweeps the wheels along their full motion between physics steps agains
 Landing contact includes the outside edges of the tyres, giving approximately 40 cm of extra sideways reach and 55 cm at the front/rear compared with wheel-centre checks. This helps close platform-edge landings without pulling the kart down from the air. Centre-screen messages and turbo headings use smaller type to leave the road visible.
 
 Swept contact also catches rising roads while the kart is climbing. The visible landing-platform faces block jumps that arrive too low, and touching a jump-gap floor triggers missed-jump recovery immediately instead of passing through the floor. Gliding wind is mixed quietly beneath the music and other effects.
+
+The camera uses a wider field of view. Turbo takeoffs start their airborne collision sweep at the ramp lip, preventing immediate re-contact with the launch ramp and its relaunch lockout. Gliding wind and flutter are now kept very low in the mix.
 
 Finish a full lap by crossing the visible start/finish line forward, between its posts. Ordered course checkpoints preserve lap completion when gliding makes the nearest-road progress jump. Reaching the end of the progress bar alone does not finish the race. The clock stops at the crossing, including airborne crossings, before landing or wall corrections can move the kart. Reverse crossings and crossings outside the gate do not count. Results hide the driving controls, and Replay starts a fresh countdown.
 
