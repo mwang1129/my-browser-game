@@ -41,7 +41,7 @@ Tyre contact includes wheel centres and contact-patch corners for slightly more 
 
 For a **trick**, tap Space within **0.35 seconds before touchdown**. A successful trick displays **PERFECT LANDING / TURBO** and grants a short boost.
 
-The camera has a wider field of view. Wings and the camera ease back after touchdown. The kart's soft shadow follows the road or gap floor and clips to surface edges. Centre messages use smaller text to leave more of the track visible.
+The camera has a wider field of view. Wings and the camera ease back after touchdown. Directional shadows use the kart and deployed-wing silhouettes, stay sharper near contact, and separate and soften with height. They project onto slopes and gap floors and clip to surface edges. A darker contact shadow helps show when the kart is on the road. Centre messages use smaller text to leave more of the track visible.
 
 ### Finishing and records
 

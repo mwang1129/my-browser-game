@@ -341,6 +341,21 @@ vm.runInContext(`
  console.log('PASS: boost held from 2 with immediate steering, unchanged steering tuning, shadows clipped to sloped receivers, inner tyre-patch contacts, solid road undersides');
 }
 `,env);
+vm.runInContext(`
+{
+ const flat=[{x:-100,y:0,z:-100},{x:100,y:0,z:-100},{x:0,y:0,z:100}],projected=projectShadowPoint({x:0,y:10,z:0},flat);
+ if(!projected||Math.abs(projected.x+3.2)>1e-8||Math.abs(projected.z-2.2)>1e-8)throw Error('inconsistent shadow light direction');
+ if(projectShadowPoint({x:0,y:-1,z:0},flat)!==null)throw Error('casts shadow upward onto road');
+ const slope=[{x:-100,y:-50,z:-100},{x:100,y:50,z:-100},{x:0,y:0,z:100}],onSlope=projectShadowPoint({x:0,y:10,z:0},slope),distance=(onSlope.x/-.32);
+ if(Math.abs(10-distance-triangleHeight(onSlope.x,onSlope.z,...slope,false))>1e-7)throw Error('shadow ray misses slope');
+ const grounded={x:0,y:0,z:0,angle:0,airborne:false,wingOpen:0},flying={...grounded,y:6,airborne:true,wingOpen:1};
+ if(kartShadowShapes(grounded).length!==1||kartShadowShapes(flying).length!==3)throw Error('missing kart or wing silhouette');
+ selectTrack(0);reset();const stateBefore=JSON.stringify(car),layers=[];drawKartShadow(car,(points,color,key)=>layers.push({points,color,key}));
+ if(!layers.length||layers.some(layer=>!layer.color.startsWith('rgba(')||layer.points.some(p=>!Number.isFinite(p.x+p.y+p.z))))throw Error('invalid projected shadow');
+ if(JSON.stringify(car)!==stateBefore)throw Error('shadow renderer moves the kart');
+ console.log('PASS: directional kart/wing silhouettes, slope ray projection, no upward shadows, finite surface-clipped layers, rendering preserves kart position');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
