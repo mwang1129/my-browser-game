@@ -32,7 +32,7 @@ for(let id=0;id<51;id++){
  driveThroughFinish();if(state!=='finished'||!saved.has(bestKey()))throw Error('lap finish '+id);
  draw(0);reset();if(elapsed!==0||travel!==0)throw Error('restart '+id);
 }
-if(signatures.size!==51||saved.size!==51)throw Error('uniqueness or record isolation');
+if(signatures.size!==51||[...saved.keys()].filter(key=>key.endsWith('-best')).length!==51)throw Error('uniqueness or record isolation');
 selectTrack(2);if(!best)throw Error('record reload');openCourses();if(($('coursegrid').innerHTML.match(/data-course=/g)||[]).length!==51)throw Error('atlas count');closeCourses();
 selectTrack(50);$('next').onclick();if(selected!==0||state!=='countdown')throw Error('next wrap');
 const looks=new Set();let priorCount=0;
@@ -359,3 +359,22 @@ vm.runInContext(`
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
+
+// A refresh must create a completely new game scope with only browser storage shared.
+{
+ const source=fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+ const storage=new Map(),browserStorage={getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value))};
+ const boot=(code,store=browserStorage)=>new Function(...Object.keys(env),source+'\n'+code)(...Object.values({...env,localStorage:store}));
+ boot("selectTrack(7);state='racing';elapsed=42.125;finish();");
+ let result=boot("return {selected,best,label:$('savedbest').textContent};");
+ assert.equal(result.selected,7);assert.equal(result.best,42.125);assert(result.label.includes('00:42.125'));
+ boot("state='racing';elapsed=50;finish();");assert.equal(boot('return best'),42.125);
+ boot("state='racing';elapsed=40;finish();selectTrack(50);state='racing';elapsed=60;finish();");
+ assert.equal(boot('return selected'),50);assert.equal(boot('return best'),60);
+ assert.equal(boot('selectTrack(7);return best'),40);
+ storage.set('apex-selected-track','999');assert.equal(boot('return selected'),0);
+ storage.set('apex-kart-v7-0-best','Infinity');assert.equal(boot('return best'),0);
+ const denied={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')}};
+ assert(boot("state='racing';elapsed=15;finish();return $('record').textContent",denied).includes('SAVING UNAVAILABLE'));
+ console.log('PASS: full refresh restores course and personal best, slower runs preserve records, improved/bonus records persist separately, invalid storage is rejected, blocked saving is visible');
+}

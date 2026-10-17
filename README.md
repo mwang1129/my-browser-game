@@ -78,3 +78,5 @@ node verify.cjs
 ```
 
 Checks cover all maps and shortcuts, 106 jumps, landings, steering and drift, power-ups, timed starts, finish-line crossings, shadows, music and pause/mute behavior, and consistency at 30/60/144 Hz. Physics runs at a fixed 120 Hz.
+
+Personal best lap times are saved separately for each circuit in this browser. Refreshing restores your last selected circuit and shows its best time on the home screen. Use the same browser and website address to keep your records; clearing browser data removes them. If browser storage is unavailable, the game displays a saving warning.
