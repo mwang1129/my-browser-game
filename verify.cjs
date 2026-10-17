@@ -3,7 +3,7 @@ const chunks=[];const vm={createContext:()=>{},runInContext:code=>chunks.push(co
 const elements={};const noop=()=>{};const context=new Proxy({}, {get:(o,k)=>k==='createLinearGradient'?()=>({addColorStop:noop}):noop,set:()=>true});
 function el(id){return elements[id]??={style:{},classList:{add:noop,remove:noop},focus:noop,querySelectorAll:()=>[],getContext:()=>context,textContent:'',width:0,height:0}}
 const handlers={};
-const audioParam=()=>({value:0,cancelScheduledValues(){},setValueAtTime(value){this.value=value},setTargetAtTime(value){this.value=value}});
+const audioParam=()=>({value:0,cancelScheduledValues(){},setValueAtTime(value){this.value=value},setTargetAtTime(value){this.value=value},linearRampToValueAtTime(value){this.value=value},exponentialRampToValueAtTime(value){this.value=value}});
 class FakeAudioContext{
  constructor(){this.currentTime=0;this.sampleRate=200;this.destination={};}
  createGain(){return {gain:audioParam(),connect(){}}}
@@ -87,7 +87,7 @@ if(driftCharge<2.2)throw Error('ultra drift charge');updateRace(.01,0,false);if(
 driftCharge=1;wasDrift=true;car.airborne=false;hitCooldown=.1;updateRace(.01,1,true);if(driftCharge)throw Error('contact cancels drift');hitCooldown=0;
 reset();state='racing';for(const p of pickups.slice(0,3)){car.x=p.x;car.z=p.z;car.y=p.y;updateRace(.01,0,false)}
 if(powerups!==3)throw Error('one power-up per box');const beforePowerup=car.v;keys.e=true;updateRace(.01,0,false);if(powerups!==2||boostTime<2.9||car.v-beforePowerup<30)throw Error('stored turbo use');
-reset();state='racing';car.airborne=true;car.y=road[0].y+.01;car.vy=-5;elapsed=5;car.airTap=4.9;update(.02);if(trickTotal!==1||boostTime<.8)throw Error('timed landing trick');
+reset();state='racing';car.airborne=true;car.y=(wheelContact(road[0].y+3,road[0].y-3)??road[0].y)+.01;car.vy=-5;elapsed=5;car.airTap=4.9;update(.02);if(trickTotal!==1||boostTime<.8)throw Error('timed landing trick');
 reset();state='racing';car.v=40;keys={w:true,' ':true,d:true};updateDriving(TUNING.step);updateRace(TUNING.step,1,true);
 if(!car.driftDirection||!car.lateral||!car.slipAngle)throw Error('drift momentum and slip');
 for(let i=0;i<80;i++)updateRace(.01,0,true);if(driftCharge<.7||!wasDrift)throw Error('neutral steering cancels held drift');
@@ -237,12 +237,12 @@ vm.runInContext(`
  lanes=[{points:[{x:0,z:0,y:0,nx:1,nz:0,progress:0},{x:0,z:20,y:10,nx:1,nz:0,progress:1}],width:10,closed:false}];
  const start={x:0,z:2,y:4,angle:0};car={...car,x:0,z:10,y:4,angle:0,airborne:true,vy:-2,v:0,flightRamp:ramps[0]};nearest=previousRampIndex=0;
  updateHeight(.1,{y:5,supported:true},start);
- if(car.airborne||car.z<=start.z||car.z>=10||Math.abs(car.y-(car.z+1.4)*.5)>1e-6)throw Error('tunneled into rising road instead of stopping at first wheel contact');
+ if(car.airborne||car.z<=start.z||car.z>=10||Math.abs(car.y-(car.z+1.95)*.5)>1e-6)throw Error('tunneled into rising road instead of stopping at first wheel contact');
  const savedZ=car.z,savedY=car.y;updateHeight(.01,{y:car.z*.5,supported:true});if(Math.abs(car.z-savedZ)>1e-8||Math.abs(car.y-savedY)>1e-6)throw Error('sank into slope on grounded frame after touchdown');
  car.x=0;car.z=10;car.angle=0;
  if(sweptWheelContact({x:0,z:10,y:9,angle:0},8)!==null)throw Error('swept landing before touching road');
  if(sweptWheelContact({x:0,z:10,y:1,angle:0},0)!==null)throw Error('swept snap onto road from below');
- const fast=sweptWheelContact({x:0,z:10,y:30,angle:0},-30);if(!fast||Math.abs(fast.y-5.7)>1e-6)throw Error('fast descent tunneled through surface');
+ const fast=sweptWheelContact({x:0,z:10,y:30,angle:0},-30);if(!fast||Math.abs(fast.y-5.975)>1e-6)throw Error('fast descent tunneled through surface');
  lanes=[];if(sweptWheelContact({x:0,z:10,y:30,angle:0},-30)!==null)throw Error('swept hit inside open gap');lanes=originalLanes;
  console.log('PASS: swept sloped touchdown, no post-landing ground penetration, no premature or below-road landing, fast descent collision, open gaps');
 }
@@ -281,6 +281,20 @@ vm.runInContext(`
  if(shadowPolygons.length!==3||shadowPolygons.some(s=>!s.color.startsWith('rgba(')||s.points.some(p=>Math.abs(p.y-groundShadow-.025)>1e-6)))throw Error('invalid soft kart shadow');
  reset();if(lapStage!==0)throw Error('replay kept finish checkpoints');
  console.log('PASS: all 51 gliding finishes despite lost progress, ordered/reverse/reset checkpoint handling, exact-plane crossing, road and gap-floor shadows, soft shadow rendering');
+}
+`,env);
+vm.runInContext(`
+{
+ const signatures=new Set();for(let id=-1;id<51;id++){const profile=musicProfile(id);signatures.add(JSON.stringify([profile.root,profile.tempo,profile.scale,profile.melody,profile.chords]));}if(signatures.size!==52)throw Error('music themes are not distinct');
+ selectTrack(0);muted=false;state='intro';syncAudio();const music=soundNodes.music;if(music.key!==-1||music.bus.gain.value<=0||gain.gain.value!==0||music.step===0)throw Error('home-screen music');
+ state='racing';selected=7;syncAudio();if(music.key!==7||music.profile.id!==7||music.voices[1].oscillator.frequency.value<=0)throw Error('map-specific music');
+ const scheduledStep=music.step;audio.currentTime+=1;syncAudio();if(music.step<=scheduledStep)throw Error('music sequencer not advancing');
+ state='paused';syncAudio();if(music.bus.gain.value!==0||gain.gain.value!==0)throw Error('paused music or engine leak');
+ state='racing';muted=true;syncAudio();if(music.bus.gain.value!==0)throw Error('muted music leak');
+ selectTrack(0);reset();state='racing';const originalLanes=lanes;lanes=[{points:[{x:0,z:-20,y:0,nx:1,nz:0,progress:0},{x:0,z:20,y:0,nx:1,nz:0,progress:1}],width:5,closed:false}];
+ car={...car,x:6.85,z:0,y:.1,angle:0,airborne:true,vy:-1};if(wheelContact(.1,-.1)===null)throw Error('slightly missed edge does not catch tyre');
+ car.x=7.2;if(wheelContact(.1,-.1)!==null)throw Error('landing assistance reaches too far');car.x=6.85;if(wheelContact(1,.5)!==null)throw Error('landing leniency pulls kart down early');lanes=originalLanes;
+ console.log('PASS: 52 distinct music themes, home/map switching, sequencer playback, pause/mute silence, modest tyre-edge landing forgiveness without early or far-edge snaps');
 }
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
