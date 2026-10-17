@@ -2,7 +2,8 @@ const fs=require('fs'),assert=require('assert');
 const chunks=[];const vm={createContext:()=>{},runInContext:code=>chunks.push(code)};
 const elements={};const noop=()=>{};const context=new Proxy({}, {get:(o,k)=>k==='createLinearGradient'?()=>({addColorStop:noop}):noop,set:()=>true});
 function el(id){return elements[id]??={style:{},classList:{add:noop,remove:noop},focus:noop,querySelectorAll:()=>[],getContext:()=>context,textContent:'',width:0,height:0}}
-const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:noop,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console};vm.createContext(env);
+const handlers={};
+const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:(name,handler)=>handlers[name]=handler,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console,handlers};vm.createContext(env);
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
 vm.runInContext(`reset(); update(2.6); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
@@ -118,6 +119,22 @@ for(const forward of ['w','arrowup'])for(const dir of [-1,1])for(const speed of 
 }
 reset();car.v=40;keys={' ':true,d:true};updateDriving(TUNING.step);if(car.driftDirection)throw Error('drift without forward');
 console.log('PASS: both sides, WASD/arrows, all six key orders, standing/moving activation, requested turn direction, release/re-arm, forward requirement');
+`,env);
+vm.runInContext(`
+selectTrack(0);reset();update(.5);const countdownRemaining=count;
+handlers.blur();if(state!=='paused')throw Error('countdown blur pause');
+advanceFrame(.1);if(count!==countdownRemaining)throw Error('countdown runs while paused');
+$('pause').onclick();if(state!=='countdown')throw Error('resume skipped countdown');
+update(3);keys.w=true;$('pause').onclick();
+if(state!=='paused'||keys.w)throw Error('pause did not clear held controls');
+updateHUD();if($('pause').textContent!=='RESUME ▶')throw Error('missing resume control');
+const pausedElapsed=elapsed;advanceFrame(.1);if(elapsed!==pausedElapsed)throw Error('paused timer advances');
+handlers.keydown({key:'Escape',repeat:true});if(state!=='paused')throw Error('held Escape toggles pause');
+$('pause').onclick();if(state!=='racing')throw Error('button resume');
+openCourses();closeCourses();if(state!=='racing')throw Error('atlas resume');
+handlers.blur();openCourses();closeCourses();if(state!=='paused')throw Error('atlas lost paused state');
+reset();update(3);updateHUD();if($('pause').textContent!=='PAUSE Ⅱ')throw Error('restart pause label');
+console.log('PASS: on-screen pause/resume, frozen timer, countdown blur recovery, cleared controls, Escape repeat, atlas pause preservation, restart');
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
