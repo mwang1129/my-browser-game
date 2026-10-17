@@ -278,7 +278,7 @@ vm.runInContext(`
  reset();const groundShadow=shadowHeightAt({...road[0],y:road[0].y+20});if(Math.abs(groundShadow-road[0].y)>1e-6)throw Error('shadow not on rendered road');
  const gap=ramps[0],mid=Math.floor((gap.end+gap.landing)/2),gapShadow=shadowHeightAt({...road[mid],y:road[mid].y+40});if(gapShadow>=road[mid].y-1)throw Error('shadow floats on missing gap road');
  const originalPoly=poly,shadowPolygons=[];poly=(points,color)=>shadowPolygons.push({points,color});drawKartShadow({...road[0],y:road[0].y+20,airborne:true});poly=originalPoly;
- if(shadowPolygons.length!==3||shadowPolygons.some(s=>!s.color.startsWith('rgba(')||s.points.some(p=>Math.abs(p.y-groundShadow-.025)>1e-6)))throw Error('invalid soft kart shadow');
+ if(shadowPolygons.length<3||shadowPolygons.some(s=>!s.color.startsWith('rgba(')||s.points.some(p=>!Number.isFinite(p.y))))throw Error('invalid soft kart shadow');
  reset();if(lapStage!==0)throw Error('replay kept finish checkpoints');
  console.log('PASS: all 51 gliding finishes despite lost progress, ordered/reverse/reset checkpoint handling, exact-plane crossing, road and gap-floor shadows, soft shadow rendering');
 }
@@ -318,7 +318,7 @@ vm.runInContext(`
 vm.runInContext(`
 {
  selectTrack(0);muted=false;const originalCue=playCountdownCue,cues=[];playCountdownCue=beat=>{cues.push(beat);originalCue(beat)};
- reset();while(count>1)update(TUNING.step);keys={w:true};update(TUNING.step);while(state==='countdown')update(TUNING.step);
+ reset();while(count>2)update(TUNING.step);keys={w:true};update(TUNING.step);while(state==='countdown')update(TUNING.step);
  if(car.v<35||boostTime<1.5||JSON.stringify(cues)!==JSON.stringify([3,2,1,'go']))throw Error('perfect start boost or countdown cue sequence');
  reset();keys={w:true};while(state==='countdown')update(TUNING.step);if(boostTime>0||car.v>2)throw Error('holding forward early awards start boost');
  reset();while(count>1)update(TUNING.step);keys={arrowup:true};update(TUNING.step);keys={};update(TUNING.step);while(state==='countdown')update(TUNING.step);if(boostTime>0)throw Error('released forward still earns start boost');
@@ -328,6 +328,17 @@ vm.runInContext(`
  muted=false;state='racing';car.airborne=true;car.v=145;syncAudio();if(soundNodes.wing.gain.value>.13||soundNodes.flutterDepth.gain.value>.004)throw Error('wind not sufficiently reduced');muted=true;syncAudio();
  if(TUNING.focalLength>=.7)throw Error('field of view not widened');
  console.log('PASS: timed forward start boost, no early/released/late boost, 3/2/1/GO sounds, muted paused cues, all 106 turbo ramp-edge launches, much quieter wind, wider field of view');
+}
+`,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();while(count>2)update(TUNING.step);keys={w:true,d:true};update(TUNING.step);while(state==='countdown')update(TUNING.step);if(boostTime<1.5||car.v<35||car.angle<=road[0].angle)throw Error('2-count launch boost with immediate steering');
+ if(TUNING.turnRate!==1.85||TUNING.fastTurnRate!==1.55||TUNING.steerResponse!==48)throw Error('ground steering sensitivity changed');
+ const triangle=[{x:-1,y:0,z:-1},{x:1,y:1,z:-1},{x:0,y:.5,z:1}],decal=clipShadowToTriangle([{x:-3,z:-3},{x:3,z:-3},{x:3,z:3},{x:-3,z:3}],triangle);
+ if(decal.length<3||decal.some(p=>triangleHeight(p.x,p.z,...triangle)===null||Math.abs(p.y-triangleHeight(p.x,p.z,...triangle)-.035)>1e-7))throw Error('shadow floats or escapes receiver triangle');
+ const originalLanes=lanes;lanes=[{points:[{x:1.65,z:1.2,y:0,nx:1,nz:0,progress:0},{x:1.65,z:1.6,y:0,nx:1,nz:0,progress:1}],width:.1,closed:false}];car={...car,x:0,z:0,y:.1,angle:0};if(wheelContact(.1,-.1)===null||sweptWheelContact({x:0,z:0,y:.1,angle:0},-.1)===null)throw Error('missed contact inside tyre patch');
+ lanes=[{points:[{x:0,z:-10,y:0,nx:1,nz:0,progress:0},{x:0,z:10,y:0,nx:1,nz:0,progress:1}],width:10,closed:false}];car={...car,x:0,z:0,y:-6.4,angle:0,airborne:true,vy:20,v:0,flightRamp:ramps[0]};nearest=previousRampIndex=0;updateHeight(.1,{y:0,supported:true},{x:0,z:0,y:-6.4,angle:0});if(!car.airborne||car.y+2.4> -3||car.vy>=0)throw Error('kart passed upward through road underside');lanes=originalLanes;
+ console.log('PASS: boost held from 2 with immediate steering, unchanged steering tuning, shadows clipped to sloped receivers, inner tyre-patch contacts, solid road undersides');
 }
 `,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));

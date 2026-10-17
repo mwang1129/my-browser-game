@@ -16,7 +16,7 @@ Open `dist/index.html` in Microsoft Edge or another modern browser. The game is 
 - R: restart
 - Escape: pause / resume
 
-For a perfect-start turbo, press and hold W / Up just as **1** appears in the three-second countdown, then keep holding through **GO**. The timing window is the first 0.3 seconds of the displayed 1. Holding forward before that or releasing it before GO does not award the bonus. The countdown has three pitched beeps and a distinct rising GO chime when Sound is on.
+For a perfect-start turbo, press and hold W / Up just as **2** appears in the three-second countdown, then keep holding through **GO**. The timing window is the first 0.3 seconds of the displayed 2. Holding forward before that or releasing it before GO does not award the bonus. The countdown has three pitched beeps and a distinct rising GO chime when Sound is on.
 
 Touch buttons appear on narrow screens. Sound is optional.
 
@@ -40,7 +40,7 @@ The camera uses a wider field of view. Turbo takeoffs start their airborne colli
 
 Finish a full lap by crossing the visible start/finish line forward, between its posts. Ordered course checkpoints preserve lap completion when gliding makes the nearest-road progress jump. Reaching the end of the progress bar alone does not finish the race. The clock stops at the crossing, including airborne crossings, before landing or wall corrections can move the kart. Reverse crossings and crossings outside the gate do not count. Results hide the driving controls, and Replay starts a fresh countdown.
 
-A soft shadow follows the kart on the road, terrain, or floor of a jump gap. It spreads and fades with height to make airborne clearance easier to judge.
+A soft shadow follows the kart and clips to the actual sloped road or jump-gap floor geometry. It does not float across road edges. It spreads and fades with height to make airborne clearance easier to judge.
 
 ## Circuits
 
@@ -61,3 +61,5 @@ The driving, vertical motion, collision, camera, and HUD functions are separate.
 Drift motion uses independent body and velocity headings. Throttle maintains momentum, reduced rear grip produces actual sideways motion, and countersteering brings the body back into line. Releasing Space restores grip progressively. Drift no longer uses a hop or an artificial body-angle offset.
 
 
+
+Tyre contact checks cover wheel centres and contact-patch corners, rather than only the four outer corners of the whole kart. Support is checked again after collisions, and the underside of road decks blocks upward penetration without snapping the kart onto the top. Ground and air steering sensitivity are unchanged by these fixes.
