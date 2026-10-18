@@ -2,7 +2,7 @@
 
 **[Play the game](https://mwang1129.github.io/my-browser-game/)**
 
-A browser kart-racing game with **50 circuits and the Skyway Stunt Park bonus map**. Race solo against the clock, drift for turbo, collect power-ups, and deploy wings over jump gaps. No installation or account is required to play.
+A browser kart-racing game with **50 circuits, Skyway Stunt Park, and Practice Grounds**. Race solo against the clock, drift for turbo, collect power-ups, and deploy wings over jump gaps. No installation or account is required to play.
 
 ## Controls
 
@@ -85,7 +85,7 @@ Tracks now sit in muted, themed landscapes with layered distant scenery and ravi
 
 The landscape uses a connected ground mesh, rolling hills, and recessed flight channels. Nature and park circuits include solid on-course trees that slow and deflect the kart on contact. Enabling sound plays a confirmation chime; music is easier to hear, and the soft engine sits in a frequency range that small speakers can reproduce.
 
-Music also plays through regular looping audio files (52 distinct themes), with synthesized music available if a file fails to load. The Test Sound button plays an independent chime file. Regenerate music assets with `node scripts/build-music.cjs`. Ground heights blend smoothly across nearby road samples and no longer use scattered patch coloring.
+Music also plays through regular looping audio files (53 distinct themes), with synthesized music available if a file fails to load. The Test Sound button plays an independent chime file. Regenerate music assets with `node scripts/build-music.cjs`. Ground heights blend smoothly across nearby road samples and no longer use scattered patch coloring.
 
 Track rails now use swept collisions, including low airborne side contact, while high glides remain clear. Broad roadside shoulders connect the asphalt edges to the surrounding ground; scenery appears more frequently along the track.
 
@@ -96,3 +96,5 @@ Entering a circuit now shows a preparation screen and waits for the selected mus
 The soundtrack uses distinct arrangements: surf/garage rock, desert oud and hand drums, glacier bells, forest folk, harbor jazz, garden marimba waltz, industrial percussion, house, orchard banjo, space ambient, alpine horns, neon synthwave, coastal chillhop and bonus-map breakbeat. Each has a different rhythm, instrumentation, tempo and longer melodic arrangement. Instrument/style metadata is in `dist/music/styles.json`.
 
 Landing lips catch descending glides that are up to 1.25 m too low and only slightly outside the platform edge. This applies at the intended landing lip, preserves forward speed, and does not rescue deep misses or force high glides down. Track-side platform faces also block low airborne passage.
+
+Practice Grounds is available directly from the home screen and as map 52 in the atlas. Wide turns, two 120 m glide gaps, no obstacles, repeatable laps and contextual tips support drift, glide and landing-trick practice. Kart shadows are darker and stay more visible while airborne. Mobile buttons prevent selection/callouts, support simultaneous presses, clean up cancelled touches, and include a Boost control.

@@ -18,8 +18,8 @@ env.AudioContext=FakeAudioContext;env.Audio=undefined;
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
 vm.runInContext(`function driveThroughFinish(){const p=road[0];car.x=p.x-Math.sin(p.angle);car.z=p.z-Math.cos(p.angle);car.y=p.y+1;car.angle=car.motionAngle=p.angle;car.airborne=false;car.v=20;keys={w:true};previous=N-1;update(.1)};reset(); update(3.1); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='racing')throw Error('finished before crossing line');travel=N;driveThroughFinish();if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
-if(tracks.length!==51||new Set(tracks.map(t=>t.name)).size!==51)throw Error('track count');
-for(let i=1;i<tracks.length;i++){let a=tracks[i-1],b=tracks[i];if(!(b.width<a.width&&b.elevation>a.elevation&&b.penalty>a.penalty))throw Error('difficulty progression '+i)}
+if(tracks.length!==52||new Set(tracks.map(t=>t.name)).size!==52)throw Error('track count');
+for(let i=1;i<51;i++){let a=tracks[i-1],b=tracks[i];if(!(b.width<a.width&&b.elevation>a.elevation&&b.penalty>a.penalty))throw Error('difficulty progression '+i)}
 const signatures=new Set(),saved=new Map();localStorage.setItem=(k,v)=>saved.set(k,String(v));localStorage.getItem=k=>saved.get(k)||null;
 for(let id=0;id<51;id++){
  selectTrack(id);if(road.length!==N||!road.every(p=>Number.isFinite(p.x+p.y+p.z+p.angle)))throw Error('geometry '+id);
@@ -33,8 +33,8 @@ for(let id=0;id<51;id++){
  draw(0);reset();if(elapsed!==0||travel!==0)throw Error('restart '+id);
 }
 if(signatures.size!==51||[...saved.keys()].filter(key=>key.endsWith('-best')).length!==51)throw Error('uniqueness or record isolation');
-selectTrack(2);if(!best)throw Error('record reload');openCourses();if(($('coursegrid').innerHTML.match(/data-course=/g)||[]).length!==51)throw Error('atlas count');closeCourses();
-selectTrack(50);$('next').onclick();if(selected!==0||state!=='countdown')throw Error('next wrap');
+selectTrack(2);if(!best)throw Error('record reload');openCourses();if(($('coursegrid').innerHTML.match(/data-course=/g)||[]).length!==52)throw Error('atlas count');closeCourses();
+selectTrack(51);$('next').onclick();if(selected!==0||state!=='countdown')throw Error('next wrap');
 const looks=new Set();let priorCount=0;
 for(let id=0;id<51;id++){
  selectTrack(id);looks.add(track.theme.kind+':'+track.variant);
@@ -200,7 +200,7 @@ console.log('PASS: zero neutral air drift, smooth banked steering and settled re
 vm.runInContext(`
 for(let id=0;id<51;id++){selectTrack(id);if(ramps.length!==(id===50?6:2))throw Error('flight sections missing '+id);for(let i=1;i<ramps.length;i++)if(ramps[i].start<=ramps[i-1].landing+4)throw Error('overlapping flight sections '+id)}
 if(!track.bonus||track.name!=='Skyway Stunt Park'||obstacles.length!==36||new Set(obstacles.map(o=>o.index)).size!==36)throw Error('bonus stunt course');
-openCourses();if(($('coursegrid').innerHTML.match(/FLIGHT SECTIONS/g)||[]).length!==51||!$('coursegrid').innerHTML.includes('6 FLIGHT SECTIONS · 36 OBSTACLES'))throw Error('atlas flight markers');closeCourses();
+openCourses();if(($('coursegrid').innerHTML.match(/FLIGHT SECTIONS/g)||[]).length!==52||!$('coursegrid').innerHTML.includes('6 FLIGHT SECTIONS · 36 OBSTACLES'))throw Error('atlas flight markers');closeCourses();
 selectTrack(0);reset();state='racing';muted=false;initAudio();
 if(!soundNodes||osc.type!=='sine'||gain.gain.value<=0)throw Error('layered engine sound');
 car.airborne=true;car.v=60;syncAudio();if(soundNodes.wing.gain.value<=0||soundNodes.flutterDepth.gain.value<=0)throw Error('wing sound missing');
@@ -421,6 +421,16 @@ vm.runInContext(`
  console.log('PASS: all 106 near-miss landing lips catch cleanly, deep/high misses unchanged, integrated touchdown preserves speed');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(51);if(!track.practice||track.width<30||obstacles.length||ramps.length!==2||shortcuts.length)throw Error('practice layout');if(!road.every(p=>Number.isFinite(p.x+p.y+p.z)))throw Error('practice road geometry');
+ for(const ramp of ramps){reset();state='racing';const tip=road[ramp.end];car.x=tip.x;car.z=tip.z;car.y=tip.y;car.v=45;nearest=previousRampIndex=ramp.end;updateHeight(.001,{y:tip.y,supported:false,progress:ramp.end+.01});if(!car.airborne)throw Error('practice takeoff');const duration=ramp.gapLength/45;for(let t=0;t<duration;t+=1/120){const progress=ramp.end+Math.min(t/duration,.999)*(ramp.landing-ramp.end),i=Math.floor(progress),f=progress-i;car.x=road[i].x+(road[i+1].x-road[i].x)*f;car.z=road[i].z+(road[i+1].z-road[i].z)*f;nearest=i;updateHeight(1/120,{y:road[i].y,supported:false});}if(car.y<road[ramp.landing].y)throw Error('practice gap too hard');car.x=road[ramp.landing].x;car.z=road[ramp.landing].z;nearest=ramp.landing;elapsed=5;for(let i=0;i<1200&&car.airborne;i++){car.airTap=elapsed;updateHeight(1/120,{y:road[ramp.landing].y,supported:true});}if(car.airborne||trickTotal<1)throw Error('practice trick landing');}
+ state='racing';elapsed=30;travel=N;lapStage=4;finish();if(state!=='racing'||elapsed!==0||travel!==0)throw Error('practice stops after lap');updateHUD();if($('practicehelp').style.display!=='block')throw Error('practice instructions');
+ const makeButton=key=>({dataset:{key},setPointerCapture(){}}),gas=makeButton('w'),left=makeButton('a'),drift=makeButton(' ');[gas,left,drift].forEach(bindTouchButton);const event=pointerId=>({pointerId,preventDefault(){}});keys={};gas.onpointerdown(event(1));left.onpointerdown(event(2));drift.onpointerdown(event(3));if(!keys.w||!keys.a||!keys[' '])throw Error('multi-touch controls');left.onlostpointercapture(event(2));if(keys.a||!keys.w||!keys[' '])throw Error('lost capture leaves key stuck');gas.onpointerdown(event(4));gas.onpointerup(event(1));if(!keys.w)throw Error('one finger cancels another');gas.onpointercancel(event(4));if(keys.w)throw Error('cancelled input stuck');clearTouchInput();if(keys[' ']||touchPointers.size)throw Error('touch clearing');
+ selectTrack(0);reset();const layers=[];drawKartShadow(car,(points,color)=>layers.push(color));if(!layers.some(color=>color.startsWith('rgba(8,15,18,0.32')))throw Error('strong contact shadow missing');
+ console.log('PASS: accessible practice map, two easy glide/trick landings, endless practice laps and tips, multi-touch/cancel/lost-capture cleanup, stronger contact shadows');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
@@ -445,9 +455,9 @@ new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
  console.log('PASS: full refresh restores course and personal best, slower runs preserve records, improved/bonus records persist separately, invalid storage is rejected, blocked saving is visible');
 }
 
-for(const name of fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav'))){const wav=fs.readFileSync('dist/music/'+name);assert.equal(wav.toString('ascii',0,4),'RIFF');assert(wav.length>100000);let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert(peak>1000&&peak<32767);}assert.equal(fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav')).length,52);console.log('PASS: 52 playable PCM music assets with nonzero, unclipped samples');
+for(const name of fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav'))){const wav=fs.readFileSync('dist/music/'+name);assert.equal(wav.toString('ascii',0,4),'RIFF');assert(wav.length>100000);let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert(peak>1000&&peak<32767);}assert.equal(fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav')).length,53);console.log('PASS: 53 playable PCM music assets with nonzero, unclipped samples');
 
-const styles=JSON.parse(fs.readFileSync('dist/music/styles.json','utf8'));assert.equal(styles.length,52);assert(new Set(styles.map(s=>s.style)).size>=18);assert(new Set(styles.map(s=>s.lead)).size>=10);assert(new Set(styles.map(s=>s.groove)).size>=10);assert(styles.every(s=>s.duration>10));console.log('PASS: varied music genres, lead instruments, rhythms, longer arrangements');
+const styles=JSON.parse(fs.readFileSync('dist/music/styles.json','utf8'));assert.equal(styles.length,53);assert(new Set(styles.map(s=>s.style)).size>=18);assert(new Set(styles.map(s=>s.lead)).size>=10);assert(new Set(styles.map(s=>s.groove)).size>=10);assert(styles.every(s=>s.duration>10));console.log('PASS: varied music genres, lead instruments, rhythms, longer arrangements');
 (async()=>{
  const source=fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];let downloads=0;const browserEnv={...env,document:{...env.document,createElement:()=>({})},requestAnimationFrame:callback=>{if(callback.name!=='loop')callback(0)},fetch:async()=>{downloads++;return {ok:true,blob:async()=>new Blob(['test'])}}};
  const boot=new Function(...Object.keys(browserEnv),source+";return startPreparedRace().then(()=>({state,count,raceReadyId,selected,preparingRace,downloaded:preparedMusic.has(String(selected)),overlay:$('loadscreen').style.display}));");const result=await boot(...Object.values(browserEnv));assert.equal(result.state,'countdown');assert.equal(result.count,3);assert.equal(result.preparingRace,false);assert.equal(result.raceReadyId,result.selected);assert(result.downloaded);assert.equal(downloads,1);assert.equal(result.overlay,'none');console.log('PASS: loading waits for full music download, marks course ready, starts a fresh countdown and clears overlay');

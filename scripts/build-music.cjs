@@ -20,8 +20,8 @@ const styles=[
  ['Coastal chillhop',88,'epiano','round','swing',[0,2,4,5,7,9,11]]
 ];
 const rate=16000,manifest=[];
-for(let id=-1;id<51;id++){
- const p=profile(id),variant=id<0?0:Math.floor(id/17),style=id<0?['Home lounge',80,'epiano','soft','swing',[0,2,4,5,7,9,11]]:id===50?['Stunt breakbeat',160,'pulse','growl','break',[0,2,3,5,7,8,10]]:styles[id%17];
+for(let id=-1;id<52;id++){
+ const p=profile(id),variant=id<0?0:Math.floor(id/17),style=id<0?['Home lounge',80,'epiano','soft','swing',[0,2,4,5,7,9,11]]:id===51?['Practice groove',100,'marimba','round','swing',[0,2,4,5,7,9,11]]:id===50?['Stunt breakbeat',160,'pulse','growl','break',[0,2,3,5,7,8,10]]:styles[id%17];
  const [name,bpm,lead,bass,groove,scale]=style,tempo=bpm+variant*3,beat=60/tempo/2,steps=64,length=Math.ceil(steps*beat*rate),samples=new Float64Array(length);let seed=12345+(id+1)*7919;
  const noise=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296*2-1};
  const degree=(n,octave=0)=>p.root+scale[((n%7)+7)%7]+Math.floor(n/7)*12+octave*12;
@@ -51,4 +51,4 @@ for(let id=-1;id<51;id++){
  }
  let peak=0;for(const sample of samples)peak=Math.max(peak,Math.abs(sample));const normalize=Math.min(1,.85/peak),wav=Buffer.alloc(44+length*2);wav.write('RIFF');wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(rate,24);wav.writeUInt32LE(rate*2,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(length*2,40);for(let i=0;i<length;i++)wav.writeInt16LE(Math.round(samples[i]*normalize*32767),44+i*2);const key=id<0?'home':String(id);fs.writeFileSync('dist/music/'+key+'.wav',wav);manifest.push({key,style:name,tempo,lead,bass,groove,duration:length/rate});
 }
-fs.writeFileSync('dist/music/styles.json',JSON.stringify(manifest,null,2));console.log('Built 52 distinct arrangements with varied instruments, percussion and moods');
+fs.writeFileSync('dist/music/styles.json',JSON.stringify(manifest,null,2));console.log('Built 53 distinct arrangements with varied instruments, percussion and moods');
