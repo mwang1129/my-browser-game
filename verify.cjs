@@ -356,6 +356,17 @@ vm.runInContext(`
  console.log('PASS: directional kart/wing silhouettes, slope ray projection, no upward shadows, finite surface-clipped layers, rendering preserves kart position');
 }
 `,env);
+vm.runInContext(`
+{
+ const styles=new Set();for(let id=0;id<51;id++){selectTrack(id);const style=landscapeStyle();if(!style.floor||!style.path)throw Error('missing terrain '+id);styles.add(JSON.stringify(style)+selected);const n=landscapeNoise(9);if(n!==landscapeNoise(9)||!Number.isFinite(n))throw Error('unstable landscape');}
+ if(styles.size!==51)throw Error('map settings');
+ selectTrack(0);muted=false;initAudio();const music=soundNodes.music;state='racing';syncAudio();audio.currentTime=30;music.next=0;const before=music.step;syncMusic();if(music.next<30||music.step-before>1)throw Error('music backlog replay');
+ let resumes=0;const resume=audio.resume;audio.resume=()=>{resumes++;return Promise.resolve()};state='paused';pauseState='racing';$('courses').style.display='none';togglePause();if(!resumes)throw Error('resume fails to wake audio');
+ audio.state='suspended';handlers.pointerdown();if(resumes<2)throw Error('gesture fails to wake audio');audio.resume=resume;audio.state='closed';const oldAudio=audio;initAudio();if(audio===oldAudio)throw Error('closed audio not recreated');audio.state='running';
+ muted=true;$('sound').onclick();if(localStorage.getItem('apex-sound-enabled')!=='true')throw Error('sound preference not saved');$('sound').onclick();
+ console.log('PASS: themed landscape settings for all 51 maps, stable scenery, no stale music backlog, audio resumes on unpause/interaction, saved sound preference');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
@@ -374,6 +385,7 @@ new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
  assert.equal(boot('selectTrack(7);return best'),40);
  storage.set('apex-selected-track','999');assert.equal(boot('return selected'),0);
  storage.set('apex-kart-v7-0-best','Infinity');assert.equal(boot('return best'),0);
+ storage.set('apex-sound-enabled','true');assert.equal(boot('return muted'),false);storage.set('apex-sound-enabled','false');assert.equal(boot('return muted'),true);
  const denied={getItem(){throw Error('blocked')},setItem(){throw Error('blocked')}};
  assert(boot("state='racing';elapsed=15;finish();return $('record').textContent",denied).includes('SAVING UNAVAILABLE'));
  console.log('PASS: full refresh restores course and personal best, slower runs preserve records, improved/bonus records persist separately, invalid storage is rejected, blocked saving is visible');

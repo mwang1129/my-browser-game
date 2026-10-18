@@ -80,3 +80,5 @@ node verify.cjs
 Checks cover all maps and shortcuts, 106 jumps, landings, steering and drift, power-ups, timed starts, finish-line crossings, shadows, music and pause/mute behavior, and consistency at 30/60/144 Hz. Physics runs at a fixed 120 Hz.
 
 Personal best lap times are saved separately for each circuit in this browser. Refreshing restores your last selected circuit and shows its best time on the home screen. Use the same browser and website address to keep your records; clearing browser data removes them. If browser storage is unavailable, the game displays a saving warning.
+
+Tracks now sit in muted, themed landscapes with layered distant scenery and ravines or channels beneath flight gaps. Each map has its own scenery seed and lighting variant. Shortcuts use unmarked terrain-colored paths, without lime signposts or minimap highlights. Sound settings persist in this browser; tap or press a driving key to activate audio after refreshing. Resuming or interacting wakes suspended browser audio, and delayed frames skip missed music notes rather than replaying them in a burst.
