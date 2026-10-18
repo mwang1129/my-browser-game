@@ -90,3 +90,7 @@ Music also plays through regular looping audio files (52 distinct themes), with 
 Track rails now use swept collisions, including low airborne side contact, while high glides remain clear. Broad roadside shoulders connect the asphalt edges to the surrounding ground; scenery appears more frequently along the track.
 
 Rendering caches camera rotation, clips terrain once in camera space, and skips offscreen terrain and scenery. Camera regression checks cover repeated turns through 180 and 360 degrees in both directions. Steering tuning is unchanged.
+
+Entering a circuit now shows a preparation screen and waits for the selected music file to download fully. Track scenery and guardrail geometry are baked into caches before racing; restarting an already prepared circuit is immediate. Scenery is generated locally, so it needs preparation rather than image downloads. Rendering also limits distant objects during races.
+
+The soundtrack uses distinct arrangements: surf/garage rock, desert oud and hand drums, glacier bells, forest folk, harbor jazz, garden marimba waltz, industrial percussion, house, orchard banjo, space ambient, alpine horns, neon synthwave, coastal chillhop and bonus-map breakbeat. Each has a different rhythm, instrumentation, tempo and longer melodic arrangement. Instrument/style metadata is in `dist/music/styles.json`.

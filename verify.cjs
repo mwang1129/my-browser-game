@@ -407,6 +407,13 @@ vm.runInContext(`
  console.log('PASS: continuous camera across repeated left/right full turns, equivalent wrapped projections, offscreen terrain culling, render through 180/360 degrees');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(0);if(bakedScenery.size!==45||bakedFences.size!==fences.length)throw Error('incomplete scenery cache');let built=0;const originalBox=box;box=()=>{built++};for(let i=0;i<N;i+=8)drawBaked(bakedScenery.get(i));for(const f of fences)drawBaked(bakedFences.get(f));box=originalBox;if(built!==0)throw Error('scenery geometry rebuilt while drawing');
+ Audio=class {constructor(src){this.src=src;this.paused=true}play(){this.paused=false;return Promise.resolve()}pause(){this.paused=true}};state='loading';syncMediaMusic();state='racing';preparedMusic.set(String(selected),'blob:prepared-song');syncMediaMusic(true);if(mediaMusic.src!=='blob:prepared-song')throw Error('preloaded song ignored');mediaMusic.pause();mediaMusic=null;preparedMusic.clear();Audio=undefined;
+ console.log('PASS: full track scenery/fence caching, no per-frame construction, music paused during loading and plays downloaded asset');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
@@ -431,4 +438,10 @@ new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
  console.log('PASS: full refresh restores course and personal best, slower runs preserve records, improved/bonus records persist separately, invalid storage is rejected, blocked saving is visible');
 }
 
-for(const name of fs.readdirSync('dist/music')){const wav=fs.readFileSync('dist/music/'+name);assert.equal(wav.toString('ascii',0,4),'RIFF');assert(wav.length>100000);let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert(peak>1000&&peak<32767);}assert.equal(fs.readdirSync('dist/music').length,52);console.log('PASS: 52 playable PCM music assets with nonzero, unclipped samples');
+for(const name of fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav'))){const wav=fs.readFileSync('dist/music/'+name);assert.equal(wav.toString('ascii',0,4),'RIFF');assert(wav.length>100000);let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert(peak>1000&&peak<32767);}assert.equal(fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav')).length,52);console.log('PASS: 52 playable PCM music assets with nonzero, unclipped samples');
+
+const styles=JSON.parse(fs.readFileSync('dist/music/styles.json','utf8'));assert.equal(styles.length,52);assert(new Set(styles.map(s=>s.style)).size>=18);assert(new Set(styles.map(s=>s.lead)).size>=10);assert(new Set(styles.map(s=>s.groove)).size>=10);assert(styles.every(s=>s.duration>10));console.log('PASS: varied music genres, lead instruments, rhythms, longer arrangements');
+(async()=>{
+ const source=fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];let downloads=0;const browserEnv={...env,document:{...env.document,createElement:()=>({})},requestAnimationFrame:callback=>{if(callback.name!=='loop')callback(0)},fetch:async()=>{downloads++;return {ok:true,blob:async()=>new Blob(['test'])}}};
+ const boot=new Function(...Object.keys(browserEnv),source+";return startPreparedRace().then(()=>({state,count,raceReadyId,selected,preparingRace,downloaded:preparedMusic.has(String(selected)),overlay:$('loadscreen').style.display}));");const result=await boot(...Object.values(browserEnv));assert.equal(result.state,'countdown');assert.equal(result.count,3);assert.equal(result.preparingRace,false);assert.equal(result.raceReadyId,result.selected);assert(result.downloaded);assert.equal(downloads,1);assert.equal(result.overlay,'none');console.log('PASS: loading waits for full music download, marks course ready, starts a fresh countdown and clears overlay');
+})().catch(error=>{console.error(error);process.exitCode=1});

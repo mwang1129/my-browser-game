@@ -1,0 +1,470 @@
+[
+  {
+    "key": "home",
+    "style": "Home lounge",
+    "tempo": 80,
+    "lead": "epiano",
+    "bass": "soft",
+    "groove": "swing",
+    "duration": 24
+  },
+  {
+    "key": "0",
+    "style": "Salt surf rock",
+    "tempo": 116,
+    "lead": "guitar",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 16.55175
+  },
+  {
+    "key": "1",
+    "style": "Desert caravan",
+    "tempo": 98,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 19.591875
+  },
+  {
+    "key": "2",
+    "style": "Canyon garage rock",
+    "tempo": 132,
+    "lead": "electric",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 14.5455
+  },
+  {
+    "key": "3",
+    "style": "Glacier ambient bells",
+    "tempo": 76,
+    "lead": "bell",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 25.2631875
+  },
+  {
+    "key": "4",
+    "style": "Juniper folk",
+    "tempo": 108,
+    "lead": "guitar",
+    "bass": "round",
+    "groove": "folk",
+    "duration": 17.7778125
+  },
+  {
+    "key": "5",
+    "style": "Crystal dreamscape",
+    "tempo": 84,
+    "lead": "glass",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 22.8571875
+  },
+  {
+    "key": "6",
+    "style": "Harbor jazz",
+    "tempo": 104,
+    "lead": "epiano",
+    "bass": "round",
+    "groove": "swing",
+    "duration": 18.4615625
+  },
+  {
+    "key": "7",
+    "style": "Garden marimba waltz",
+    "tempo": 114,
+    "lead": "marimba",
+    "bass": "soft",
+    "groove": "waltz",
+    "duration": 16.842125
+  },
+  {
+    "key": "8",
+    "style": "Volcanic industrial rock",
+    "tempo": 142,
+    "lead": "electric",
+    "bass": "growl",
+    "groove": "heavy",
+    "duration": 13.5211875
+  },
+  {
+    "key": "9",
+    "style": "Cloud house",
+    "tempo": 124,
+    "lead": "organ",
+    "bass": "synth",
+    "groove": "house",
+    "duration": 15.483875
+  },
+  {
+    "key": "10",
+    "style": "Orchard bluegrass",
+    "tempo": 138,
+    "lead": "banjo",
+    "bass": "pick",
+    "groove": "folk",
+    "duration": 13.9130625
+  },
+  {
+    "key": "11",
+    "style": "Oasis hand drums",
+    "tempo": 92,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 20.869625
+  },
+  {
+    "key": "12",
+    "style": "Moon space ambient",
+    "tempo": 70,
+    "lead": "pad",
+    "bass": "soft",
+    "groove": "space",
+    "duration": 27.428625
+  },
+  {
+    "key": "13",
+    "style": "Foundry techno",
+    "tempo": 136,
+    "lead": "pulse",
+    "bass": "growl",
+    "groove": "techno",
+    "duration": 14.1176875
+  },
+  {
+    "key": "14",
+    "style": "Alpine orchestral",
+    "tempo": 102,
+    "lead": "horn",
+    "bass": "round",
+    "groove": "march",
+    "duration": 18.8235625
+  },
+  {
+    "key": "15",
+    "style": "Neon synthwave",
+    "tempo": 110,
+    "lead": "synth",
+    "bass": "synth",
+    "groove": "electro",
+    "duration": 17.4545625
+  },
+  {
+    "key": "16",
+    "style": "Coastal chillhop",
+    "tempo": 88,
+    "lead": "epiano",
+    "bass": "round",
+    "groove": "swing",
+    "duration": 21.8181875
+  },
+  {
+    "key": "17",
+    "style": "Salt surf rock",
+    "tempo": 119,
+    "lead": "guitar",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 16.1345
+  },
+  {
+    "key": "18",
+    "style": "Desert caravan",
+    "tempo": 101,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 19.0099375
+  },
+  {
+    "key": "19",
+    "style": "Canyon garage rock",
+    "tempo": 135,
+    "lead": "electric",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 14.22225
+  },
+  {
+    "key": "20",
+    "style": "Glacier ambient bells",
+    "tempo": 79,
+    "lead": "bell",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 24.3038125
+  },
+  {
+    "key": "21",
+    "style": "Juniper folk",
+    "tempo": 111,
+    "lead": "guitar",
+    "bass": "round",
+    "groove": "folk",
+    "duration": 17.2973125
+  },
+  {
+    "key": "22",
+    "style": "Crystal dreamscape",
+    "tempo": 87,
+    "lead": "glass",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 22.069
+  },
+  {
+    "key": "23",
+    "style": "Harbor jazz",
+    "tempo": 107,
+    "lead": "epiano",
+    "bass": "round",
+    "groove": "swing",
+    "duration": 17.9439375
+  },
+  {
+    "key": "24",
+    "style": "Garden marimba waltz",
+    "tempo": 117,
+    "lead": "marimba",
+    "bass": "soft",
+    "groove": "waltz",
+    "duration": 16.4103125
+  },
+  {
+    "key": "25",
+    "style": "Volcanic industrial rock",
+    "tempo": 145,
+    "lead": "electric",
+    "bass": "growl",
+    "groove": "heavy",
+    "duration": 13.2414375
+  },
+  {
+    "key": "26",
+    "style": "Cloud house",
+    "tempo": 127,
+    "lead": "organ",
+    "bass": "synth",
+    "groove": "house",
+    "duration": 15.118125
+  },
+  {
+    "key": "27",
+    "style": "Orchard bluegrass",
+    "tempo": 141,
+    "lead": "banjo",
+    "bass": "pick",
+    "groove": "folk",
+    "duration": 13.6170625
+  },
+  {
+    "key": "28",
+    "style": "Oasis hand drums",
+    "tempo": 95,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 20.2105625
+  },
+  {
+    "key": "29",
+    "style": "Moon space ambient",
+    "tempo": 73,
+    "lead": "pad",
+    "bass": "soft",
+    "groove": "space",
+    "duration": 26.301375
+  },
+  {
+    "key": "30",
+    "style": "Foundry techno",
+    "tempo": 139,
+    "lead": "pulse",
+    "bass": "growl",
+    "groove": "techno",
+    "duration": 13.813
+  },
+  {
+    "key": "31",
+    "style": "Alpine orchestral",
+    "tempo": 105,
+    "lead": "horn",
+    "bass": "round",
+    "groove": "march",
+    "duration": 18.28575
+  },
+  {
+    "key": "32",
+    "style": "Neon synthwave",
+    "tempo": 113,
+    "lead": "synth",
+    "bass": "synth",
+    "groove": "electro",
+    "duration": 16.9911875
+  },
+  {
+    "key": "33",
+    "style": "Coastal chillhop",
+    "tempo": 91,
+    "lead": "epiano",
+    "bass": "round",
+    "groove": "swing",
+    "duration": 21.0989375
+  },
+  {
+    "key": "34",
+    "style": "Salt surf rock",
+    "tempo": 122,
+    "lead": "guitar",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 15.73775
+  },
+  {
+    "key": "35",
+    "style": "Desert caravan",
+    "tempo": 104,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 18.4615625
+  },
+  {
+    "key": "36",
+    "style": "Canyon garage rock",
+    "tempo": 138,
+    "lead": "electric",
+    "bass": "pick",
+    "groove": "rock",
+    "duration": 13.9130625
+  },
+  {
+    "key": "37",
+    "style": "Glacier ambient bells",
+    "tempo": 82,
+    "lead": "bell",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 23.4146875
+  },
+  {
+    "key": "38",
+    "style": "Juniper folk",
+    "tempo": 114,
+    "lead": "guitar",
+    "bass": "round",
+    "groove": "folk",
+    "duration": 16.842125
+  },
+  {
+    "key": "39",
+    "style": "Crystal dreamscape",
+    "tempo": 90,
+    "lead": "glass",
+    "bass": "soft",
+    "groove": "light",
+    "duration": 21.333375
+  },
+  {
+    "key": "40",
+    "style": "Harbor jazz",
+    "tempo": 110,
+    "lead": "epiano",
+    "bass": "round",
+    "groove": "swing",
+    "duration": 17.4545625
+  },
+  {
+    "key": "41",
+    "style": "Garden marimba waltz",
+    "tempo": 120,
+    "lead": "marimba",
+    "bass": "soft",
+    "groove": "waltz",
+    "duration": 16
+  },
+  {
+    "key": "42",
+    "style": "Volcanic industrial rock",
+    "tempo": 148,
+    "lead": "electric",
+    "bass": "growl",
+    "groove": "heavy",
+    "duration": 12.973
+  },
+  {
+    "key": "43",
+    "style": "Cloud house",
+    "tempo": 130,
+    "lead": "organ",
+    "bass": "synth",
+    "groove": "house",
+    "duration": 14.76925
+  },
+  {
+    "key": "44",
+    "style": "Orchard bluegrass",
+    "tempo": 144,
+    "lead": "banjo",
+    "bass": "pick",
+    "groove": "folk",
+    "duration": 13.333375
+  },
+  {
+    "key": "45",
+    "style": "Oasis hand drums",
+    "tempo": 98,
+    "lead": "oud",
+    "bass": "round",
+    "groove": "hand",
+    "duration": 19.591875
+  },
+  {
+    "key": "46",
+    "style": "Moon space ambient",
+    "tempo": 76,
+    "lead": "pad",
+    "bass": "soft",
+    "groove": "space",
+    "duration": 25.2631875
+  },
+  {
+    "key": "47",
+    "style": "Foundry techno",
+    "tempo": 142,
+    "lead": "pulse",
+    "bass": "growl",
+    "groove": "techno",
+    "duration": 13.5211875
+  },
+  {
+    "key": "48",
+    "style": "Alpine orchestral",
+    "tempo": 108,
+    "lead": "horn",
+    "bass": "round",
+    "groove": "march",
+    "duration": 17.7778125
+  },
+  {
+    "key": "49",
+    "style": "Neon synthwave",
+    "tempo": 116,
+    "lead": "synth",
+    "bass": "synth",
+    "groove": "electro",
+    "duration": 16.55175
+  },
+  {
+    "key": "50",
+    "style": "Stunt breakbeat",
+    "tempo": 166,
+    "lead": "pulse",
+    "bass": "growl",
+    "groove": "break",
+    "duration": 11.5663125
+  }
+]
