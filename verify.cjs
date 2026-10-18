@@ -414,6 +414,13 @@ vm.runInContext(`
  console.log('PASS: full track scenery/fence caching, no per-frame construction, music paused during loading and plays downloaded asset');
 }
 `,env);
+vm.runInContext(`
+{
+ let catches=0;for(let id=0;id<51;id++){selectTrack(id);for(const ramp of ramps){const p=road[ramp.landing],fx=Math.sin(p.angle),fz=Math.cos(p.angle);car={...car,airborne:true,flightRamp:ramp,v:55,angle:p.angle,x:p.x+fx*.2,z:p.z+fz*.2,y:p.y-1};const start={x:p.x-fx*3,z:p.z-fz*3,y:p.y-.8,angle:p.angle};const caught=landingEdgeAssist(start,car.y);if(!caught||!Number.isFinite(caught.x+caught.y+caught.z)||Math.abs(caught.y-p.y)>1)throw Error('landing lip catch '+id);catches++;car.y=p.y-3;start.y=p.y-2.8;if(landingEdgeAssist(start,car.y))throw Error('rescued deep miss');car.y=p.y+2;start.y=p.y+2.2;if(landingEdgeAssist(start,car.y))throw Error('premature landing');car.y=p.y-3;const overlapStart={x:p.x-fx*.3,z:p.z-fz*.3,y:p.y-2.9,angle:p.angle};const blocked=landingWallContact(overlapStart,car.y);if(!blocked||((blocked.x-p.x)*fx+(blocked.z-p.z)*fz)>-1.9)throw Error('already overlapping front wall leaks '+id);}}
+ if(catches!==106)throw Error('not all landing lips tested');selectTrack(0);reset();state='racing';const ramp=ramps[0],p=road[ramp.landing],fx=Math.sin(p.angle),fz=Math.cos(p.angle);car={...car,x:p.x+fx*.2,z:p.z+fz*.2,y:p.y-1,angle:p.angle,v:55,vy:-4,airborne:true,flightRamp:ramp,rampLock:1};nearest=previousRampIndex=ramp.landing;const start={x:p.x-fx*3,z:p.z-fz*3,y:p.y-.9,angle:p.angle};updateHeight(.02,findSurface(car.x,car.z),start);if(car.airborne||car.y<p.y-.2||car.v<45)throw Error('lip assist does not finish landing');
+ console.log('PASS: all 106 near-miss landing lips catch cleanly, deep/high misses unchanged, integrated touchdown preserves speed');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 

@@ -94,3 +94,5 @@ Rendering caches camera rotation, clips terrain once in camera space, and skips 
 Entering a circuit now shows a preparation screen and waits for the selected music file to download fully. Track scenery and guardrail geometry are baked into caches before racing; restarting an already prepared circuit is immediate. Scenery is generated locally, so it needs preparation rather than image downloads. Rendering also limits distant objects during races.
 
 The soundtrack uses distinct arrangements: surf/garage rock, desert oud and hand drums, glacier bells, forest folk, harbor jazz, garden marimba waltz, industrial percussion, house, orchard banjo, space ambient, alpine horns, neon synthwave, coastal chillhop and bonus-map breakbeat. Each has a different rhythm, instrumentation, tempo and longer melodic arrangement. Instrument/style metadata is in `dist/music/styles.json`.
+
+Landing lips catch descending glides that are up to 1.25 m too low and only slightly outside the platform edge. This applies at the intended landing lip, preserves forward speed, and does not rescue deep misses or force high glides down. Track-side platform faces also block low airborne passage.
