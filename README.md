@@ -63,7 +63,7 @@ Sound starts **off**. Click **Sound On** to hear the home-screen theme, distinct
 
 ## Run locally
 
-Open `dist/index.html` in a modern browser. The game is a self-contained HTML file with no external dependencies and can run offline.
+Open `dist/index.html` in a modern browser. Keep the `dist/music/` folder and `dist/sound-check.wav` beside the HTML file for music and the sound test. The game has no third-party runtime dependencies and can run offline.
 
 ## Project files and checks
 
@@ -84,3 +84,5 @@ Personal best lap times are saved separately for each circuit in this browser. R
 Tracks now sit in muted, themed landscapes with layered distant scenery and ravines or channels beneath flight gaps. Each map has its own scenery seed and lighting variant. Shortcuts use unmarked terrain-colored paths, without lime signposts or minimap highlights. Sound settings persist in this browser; tap or press a driving key to activate audio after refreshing. Resuming or interacting wakes suspended browser audio, and delayed frames skip missed music notes rather than replaying them in a burst.
 
 The landscape uses a connected ground mesh, rolling hills, and recessed flight channels. Nature and park circuits include solid on-course trees that slow and deflect the kart on contact. Enabling sound plays a confirmation chime; music is easier to hear, and the soft engine sits in a frequency range that small speakers can reproduce.
+
+Music also plays through regular looping audio files (52 distinct themes), with synthesized music available if a file fails to load. The Test Sound button plays an independent chime file. Regenerate music assets with `node scripts/build-music.cjs`. Ground heights blend smoothly across nearby road samples and no longer use scattered patch coloring.

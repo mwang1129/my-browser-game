@@ -14,7 +14,7 @@ class FakeAudioContext{
  resume(){return Promise.resolve()}
 }
 const env={document:{getElementById:el,querySelectorAll:()=>[]},innerWidth:1440,innerHeight:900,devicePixelRatio:1,addEventListener:(name,handler)=>handlers[name]=handler,requestAnimationFrame:noop,setTimeout:noop,localStorage:{getItem:()=>0,setItem:noop},console,handlers};vm.createContext(env);
-env.AudioContext=FakeAudioContext;
+env.AudioContext=FakeAudioContext;env.Audio=undefined;
 vm.runInContext(fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1],env);
 vm.runInContext(`function driveThroughFinish(){const p=road[0];car.x=p.x-Math.sin(p.angle);car.z=p.z-Math.cos(p.angle);car.y=p.y+1;car.angle=car.motionAngle=p.angle;car.airborne=false;car.v=20;keys={w:true};previous=N-1;update(.1)};reset(); update(3.1); if(state!=='racing')throw Error('countdown');keys.w=true;for(let i=0;i<60;i++)update(1/60);if(car.v<20)throw Error('acceleration');let a=car.angle; keys.d=true;update(.1);if(car.angle<=a)throw Error('steering'); keys={};travel=N-2;elapsed=20;update(.016);if(state!=='racing')throw Error('finished before crossing line');travel=N;driveThroughFinish();if(state!=='finished')throw Error('finish');reset();if(elapsed!==0||state!=='countdown')throw Error('replay');draw(0);console.log('PASS: countdown, acceleration, steering, finish, replay, rendering calls');`,env);
 vm.runInContext(`
@@ -377,6 +377,16 @@ vm.runInContext(`
  console.log('PASS: connected finite ground mesh, solid on-course trees, audible-range soft engine, enable-sound chime and pause silence');
 }
 `,env);
+vm.runInContext(`
+{
+ Audio=class {constructor(src){this.src=src;this.paused=true;this.plays=0;this.pauses=0}play(){this.plays++;this.paused=false;return Promise.resolve()}pause(){this.paused=true;this.pauses++}};
+ mediaMusic=null;muted=false;state='intro';syncMediaMusic(true);if(!mediaMusic.src.includes('home.wav')||mediaMusic.paused)throw Error('home audio file');const homePlayer=mediaMusic;syncMediaMusic();if(homePlayer.plays!==1)throw Error('restarted playing music');
+ state='racing';syncMediaMusic();if(!homePlayer.paused||!mediaMusic.src.includes(selected+'.wav'))throw Error('map audio switching');state='paused';syncMediaMusic();if(!mediaMusic.paused)throw Error('file music leaks on pause');state='racing';muted=true;syncMediaMusic();if(!mediaMusic.paused)throw Error('file music leaks on mute');
+ muted=false;mediaFailed=true;if(syncMediaMusic()!==false)throw Error('missing synthesizer fallback');
+ $('soundtest').onclick();if(!soundTestPlayer.src.includes('sound-check.wav')||soundTestPlayer.paused)throw Error('independent sound check');soundTestPlayer.pause();mediaMusic.pause();mediaMusic=null;Audio=undefined;
+ console.log('PASS: home/map audio-file playback, no restarts, pause/mute, synthesizer fallback, independent sound-test playback');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
@@ -400,3 +410,5 @@ new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
  assert(boot("state='racing';elapsed=15;finish();return $('record').textContent",denied).includes('SAVING UNAVAILABLE'));
  console.log('PASS: full refresh restores course and personal best, slower runs preserve records, improved/bonus records persist separately, invalid storage is rejected, blocked saving is visible');
 }
+
+for(const name of fs.readdirSync('dist/music')){const wav=fs.readFileSync('dist/music/'+name);assert.equal(wav.toString('ascii',0,4),'RIFF');assert(wav.length>100000);let peak=0;for(let i=44;i<wav.length;i+=2)peak=Math.max(peak,Math.abs(wav.readInt16LE(i)));assert(peak>1000&&peak<32767);}assert.equal(fs.readdirSync('dist/music').length,52);console.log('PASS: 52 playable PCM music assets with nonzero, unclipped samples');
