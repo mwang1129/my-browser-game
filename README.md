@@ -86,3 +86,5 @@ Tracks now sit in muted, themed landscapes with layered distant scenery and ravi
 The landscape uses a connected ground mesh, rolling hills, and recessed flight channels. Nature and park circuits include solid on-course trees that slow and deflect the kart on contact. Enabling sound plays a confirmation chime; music is easier to hear, and the soft engine sits in a frequency range that small speakers can reproduce.
 
 Music also plays through regular looping audio files (52 distinct themes), with synthesized music available if a file fails to load. The Test Sound button plays an independent chime file. Regenerate music assets with `node scripts/build-music.cjs`. Ground heights blend smoothly across nearby road samples and no longer use scattered patch coloring.
+
+Track rails now use swept collisions, including low airborne side contact, while high glides remain clear. Broad roadside shoulders connect the asphalt edges to the surrounding ground; scenery appears more frequently along the track.

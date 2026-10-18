@@ -387,6 +387,16 @@ vm.runInContext(`
  console.log('PASS: home/map audio-file playback, no restarts, pause/mute, synthesizer fallback, independent sound-test playback');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';const f=fences.find(f=>Math.hypot(f.b.x-f.a.x,f.b.z-f.a.z)>1),mx=(f.a.x+f.b.x)/2,mz=(f.a.z+f.b.z)/2,len=Math.hypot(f.b.x-f.a.x,f.b.z-f.a.z),nx=-(f.b.z-f.a.z)/len,nz=(f.b.x-f.a.x)/len,y=(f.a.y+f.b.y)/2;
+ for(const airborne of [false,true]){const start={x:mx+nx*4,z:mz+nz*4,y:y+.2};car={...car,x:mx-nx*4,z:mz-nz*4,y:y+.2,airborne,v:100,angle:0,motionAngle:Math.atan2(-nx,-nz)};collideTrackEdges(start);if((car.x-mx)*nx+(car.z-mz)*nz<1.64)throw Error('rail tunneling');}
+ const start={x:mx+nx*4,z:mz+nz*4,y:y+8};car={...car,x:mx-nx*4,z:mz-nz*4,y:y+8,airborne:true};collideTrackEdges(start);if(Math.abs(car.x-(mx-nx*4))>.001)throw Error('high flight blocked');
+ if(!roadsideMesh.length||roadsideMesh.some(face=>face.points.some(p=>!Number.isFinite(p.x+p.y+p.z))))throw Error('road shoulders missing');
+ for(const face of roadsideMesh.filter((_,i)=>i%2===0)){const nearest=road.reduce((a,p)=>Math.hypot(p.x-face.points[0].x,p.z-face.points[0].z)<Math.hypot(a.x-face.points[0].x,a.z-face.points[0].z)?p:a);if(Math.abs(face.points[0].y-nearest.y)>.5)throw Error('detached shoulder');}
+ console.log('PASS: swept grounded/low-airborne rail collisions, high flight clearance, attached roadside shoulders and finite scenery');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
