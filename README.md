@@ -88,3 +88,5 @@ The landscape uses a connected ground mesh, rolling hills, and recessed flight c
 Music also plays through regular looping audio files (52 distinct themes), with synthesized music available if a file fails to load. The Test Sound button plays an independent chime file. Regenerate music assets with `node scripts/build-music.cjs`. Ground heights blend smoothly across nearby road samples and no longer use scattered patch coloring.
 
 Track rails now use swept collisions, including low airborne side contact, while high glides remain clear. Broad roadside shoulders connect the asphalt edges to the surrounding ground; scenery appears more frequently along the track.
+
+Rendering caches camera rotation, clips terrain once in camera space, and skips offscreen terrain and scenery. Camera regression checks cover repeated turns through 180 and 360 degrees in both directions. Steering tuning is unchanged.

@@ -397,6 +397,16 @@ vm.runInContext(`
  console.log('PASS: swept grounded/low-airborne rail collisions, high flight clearance, attached roadside shoulders and finite scenery');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';keys={};
+ for(const direction of [-1,1]){car.angle=direction*3;cam.angle=car.angle;for(let i=0;i<400;i++){car.angle+=direction*.02;const before=cam.angle;updateCamera(.01);if(!Number.isFinite(cam.angle)||Math.abs(cam.angle-before)>.04)throw Error('camera hitch at half/full turn');}}
+ const point={x:100,y:4,z:140};cam={x:0,y:12,z:0,angle:3.2};const projected=project(point);cam.angle+=Math.PI*2;const wrapped=project(point);if(Math.abs(projected.x-wrapped.x)>1e-6||Math.abs(projected.y-wrapped.y)>1e-6)throw Error('rotation projection discontinuity');
+ let emitted=0;const originalTerrain=terrainPoly;terrainPoly=(points,color)=>{emitted++;originalTerrain(points,color)};for(const degrees of [179,180,181,359,360,361]){cam.angle=degrees*Math.PI/180;drawLandscape();}terrainPoly=originalTerrain;if(emitted>=landscapeFaces.length*6)throw Error('offscreen terrain never culled');
+ for(const degrees of [179,180,181,359,360,361]){cam.angle=degrees*Math.PI/180;draw(0);}
+ console.log('PASS: continuous camera across repeated left/right full turns, equivalent wrapped projections, offscreen terrain culling, render through 180/360 degrees');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
