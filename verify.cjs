@@ -367,6 +367,16 @@ vm.runInContext(`
  console.log('PASS: themed landscape settings for all 51 maps, stable scenery, no stale music backlog, audio resumes on unpause/interaction, saved sound preference');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(4);if(terrainMesh.length!==36*36*2||terrainMesh.some(f=>f.points.some(p=>!Number.isFinite(p.x+p.y+p.z))))throw Error('terrain mesh invalid');
+ const vertices=new Set(terrainMesh.flatMap(f=>f.points));if(vertices.size!==37*37)throw Error('terrain is disconnected');
+ const tree=obstacles.find(o=>o.type==='tree');if(!tree)throw Error('missing solid tree');reset();state='racing';car.x=tree.x;car.z=tree.z;car.y=tree.y;car.v=50;updateObstacles();if(car.v>=50||runHits!==1||Math.hypot(car.x-tree.x,car.z-tree.z)<tree.radius+1.24)throw Error('tree collision');
+ muted=false;initAudio();syncAudio();if(osc.frequency.value<100||osc.frequency.value>160)throw Error('engine outside speaker range');
+ state='intro';confirmSound();syncAudio();if(soundNodes.cues.bus.gain.value<=0)throw Error('enable sound confirmation silent');state='paused';syncAudio();if(soundNodes.cues.bus.gain.value!==0)throw Error('confirmation leaks while paused');
+ console.log('PASS: connected finite ground mesh, solid on-course trees, audible-range soft engine, enable-sound chime and pause silence');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
