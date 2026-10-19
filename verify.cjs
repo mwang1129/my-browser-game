@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('assert');
 const chunks=[];const vm={createContext:()=>{},runInContext:code=>chunks.push(code)};
-const elements={};const noop=()=>{};const context=new Proxy({}, {get:(o,k)=>k==='createLinearGradient'?()=>({addColorStop:noop}):noop,set:()=>true});
+const elements={};const noop=()=>{};const context=new Proxy({}, {get:(o,k)=>k==='createLinearGradient'?()=>({addColorStop:noop}):(o[k]??noop),set:(o,k,value)=>{o[k]=value;return true}});
 function el(id){return elements[id]??={style:{},classList:{add:noop,remove:noop},focus:noop,querySelectorAll:()=>[],getContext:()=>context,textContent:'',width:0,height:0}}
 const handlers={};
 const audioParam=()=>({value:0,cancelScheduledValues(){},setValueAtTime(value){this.value=value},setTargetAtTime(value){this.value=value},linearRampToValueAtTime(value){this.value=value},exponentialRampToValueAtTime(value){this.value=value}});
@@ -439,6 +439,15 @@ vm.runInContext(`
  console.log('PASS: practice library selects three open-field lessons, free movement, real glide gap, contextual goals, instant retry/change, normal races retain countdown');
 }
 `,env);
+vm.runInContext(`
+{
+ selectTrack(0);reset();state='racing';cam={x:0,y:12,z:0,angle:0};const originalView=viewPoint,originalFill=ctx.fill,originalMove=ctx.moveTo,originalLine=ctx.lineTo;let fills=0,points=[];viewPoint=p=>p;ctx.fill=()=>fills++;ctx.moveTo=ctx.lineTo=(x,y)=>points.push([x,y]);
+ poly([{x:-1,y:0,z:-2},{x:1,y:0,z:5},{x:0,y:1,z:5}],'#123456');if(fills!==1||points.some(p=>!p.every(Number.isFinite)))throw Error('partially visible face disappears');
+ fills=0;poly([{x:-1,y:0,z:-2},{x:1,y:0,z:-3},{x:0,y:1,z:-5}],'#123456');if(fills)throw Error('fully behind-camera face drawn');viewPoint=originalView;ctx.fill=originalFill;ctx.moveTo=originalMove;ctx.lineTo=originalLine;
+ practiceMode='glide';selectTrack(51);reset();const originalTerrain=terrainPoly;for(const [z,angle] of [[-140,0],[210,Math.PI],[165,-Math.PI/2],[180,Math.PI*.8]]){cam={x:0,y:12,z,angle};const colors=[];terrainPoly=(points,color)=>{colors.push(color);originalTerrain(points,color)};drawLandscape();terrainPoly=originalTerrain;const floor=colors.indexOf(landscapeStyle().floor),ground=colors.indexOf(landscapeStyle().ground);if(floor>=0&&ground>=0&&floor>ground)throw Error('gap floor covers foreground');draw(0);}
+ console.log('PASS: near-plane polygon clipping preserves visible faces, invisible faces culled, finite projections, practice gap floor drawn below foreground through approach/landing/side/turn views');
+}
+`,env);
 new Function(...Object.keys(env),chunks.join('\n'))(...Object.values(env));
 
 
@@ -468,5 +477,5 @@ for(const name of fs.readdirSync('dist/music').filter(name=>name.endsWith('.wav'
 const styles=JSON.parse(fs.readFileSync('dist/music/styles.json','utf8'));assert.equal(styles.length,53);assert(new Set(styles.map(s=>s.style)).size>=18);assert(new Set(styles.map(s=>s.lead)).size>=10);assert(new Set(styles.map(s=>s.groove)).size>=10);assert(styles.every(s=>s.duration>10));console.log('PASS: varied music genres, lead instruments, rhythms, longer arrangements');
 (async()=>{
  const source=fs.readFileSync('dist/index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];let downloads=0;const browserEnv={...env,document:{...env.document,createElement:()=>({})},requestAnimationFrame:callback=>{if(callback.name!=='loop')callback(0)},fetch:async()=>{downloads++;return {ok:true,blob:async()=>new Blob(['test'])}}};
- const boot=new Function(...Object.keys(browserEnv),source+";return startPreparedRace().then(()=>({state,count,raceReadyId,selected,preparingRace,downloaded:preparedMusic.has(String(selected)),overlay:$('loadscreen').style.display}));");const result=await boot(...Object.values(browserEnv));assert.equal(result.state,'countdown');assert.equal(result.count,3);assert.equal(result.preparingRace,false);assert.equal(result.raceReadyId,result.selected);assert(result.downloaded);assert.equal(downloads,1);assert.equal(result.overlay,'none');console.log('PASS: loading waits for full music download, marks course ready, starts a fresh countdown and clears overlay');
+ const boot=new Function(...Object.keys(browserEnv),source+";selectTrack(0);return startPreparedRace().then(()=>({state,count,raceReadyId,selected,preparingRace,downloaded:preparedMusic.has(String(selected)),overlay:$('loadscreen').style.display}));");const result=await boot(...Object.values(browserEnv));assert.equal(result.state,'countdown');assert.equal(result.count,3);assert.equal(result.preparingRace,false);assert.equal(result.raceReadyId,result.selected);assert(result.downloaded);assert.equal(downloads,1);assert.equal(result.overlay,'none');console.log('PASS: loading waits for full music download, marks course ready, starts a fresh countdown and clears overlay');
 })().catch(error=>{console.error(error);process.exitCode=1});
